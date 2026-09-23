@@ -1,0 +1,1982 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>매출 플래너</title>
+<meta name="theme-color" content="#E3E1DC">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<script>window.SPP_CONFIG = window.SPP_CONFIG || {};</script>
+<script src="config.js"></script>
+<style>
+:root{
+  --bg:#E3E1DC; --canvas:#F4F1EB; --panel:#FBFAF7; --band:#EAE6DF; --well:#F0EDE7;
+  --ink:#26282B; --ink2:#5F6368; --ink3:#93979B;
+  --line:rgba(38,40,43,.08); --line2:rgba(38,40,43,.15);
+  --moss:#4F6D5E; --moss-s:#DDE6E0; --mist:#9FB1C6; --mist-s:#E4EAF1;
+  --ochre:#B99A5E; --ochre-s:#F1E9D9; --rose:#B4716B; --rose-s:#F4E3E0; --lilac:#AFA6C6;
+  --r-xl:42px; --r-lg:26px; --r-md:18px; --r-sm:12px;
+  --sh:0 1px 0 rgba(255,255,255,.8) inset, 0 22px 44px -30px rgba(52,46,36,.38), 0 2px 6px -3px rgba(52,46,36,.08);
+  --f:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Noto Sans KR',sans-serif;
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:13px/1.5 var(--f);font-feature-settings:'tnum' 1;-webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+button,input,select,textarea{font:inherit;color:inherit;letter-spacing:inherit}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--moss);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.muted{color:var(--ink2)} .faint{color:var(--ink3)} .pos{color:var(--moss)} .neg{color:var(--rose)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+svg.i{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:228px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;padding:24px 16px 18px;display:flex;flex-direction:column;gap:26px}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px}
+.brand-mark{width:30px;height:30px;border-radius:11px 11px 11px 4px;background:var(--ink);display:grid;place-items:center}
+.brand-mark span{width:12px;height:12px;border-radius:50%;border:2px solid var(--canvas);border-bottom-color:var(--ochre)}
+.brand b{font-size:14.5px;font-weight:650;letter-spacing:-.02em}
+.brand small{display:block;color:var(--ink3);font-size:11px;margin-top:-2px}
+.nav{display:flex;flex-direction:column;gap:3px}
+.nav a{display:flex;align-items:center;gap:11px;height:38px;padding:0 14px;border-radius:999px;color:var(--ink2);border:1px solid transparent;transition:background .15s}
+.nav a:hover{background:rgba(251,250,247,.55)}
+.nav a.on{background:var(--panel);color:var(--ink);border-color:var(--line);box-shadow:var(--sh);font-weight:600}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:10px}
+.conn{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--ink2);padding:10px 12px;border-radius:16px;background:rgba(251,250,247,.5);border:1px solid var(--line);cursor:pointer;text-align:left}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ink3);flex:none}
+.dot.ok{background:var(--moss)} .dot.demo{background:var(--ochre)} .dot.err{background:var(--rose)}
+.saving{font-size:11px;color:var(--ink3);padding:0 12px;min-height:16px}
+.saving.err{color:var(--rose)}
+
+.main{padding:20px 30px 80px 6px;min-width:0}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:22px;min-height:40px}
+.top h1{font-size:22px;font-weight:620;letter-spacing:-.03em;margin:0 auto 0 4px}
+.top .sub{display:block;font-size:12px;color:var(--ink3);font-weight:400;letter-spacing:0}
+.period{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.stepper{display:flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:999px;height:36px;padding:0 3px;box-shadow:var(--sh)}
+.stepper button{width:30px;height:30px;border:0;background:none;border-radius:50%;cursor:pointer;color:var(--ink2)}
+.stepper button:hover{background:var(--well)}
+.stepper b{min-width:62px;text-align:center;font-weight:600}
+.stepper select{border:0;background:none;height:30px;padding:0 6px;font-weight:600;cursor:pointer}
+
+/* ---------- buttons & inputs ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;padding:0 16px;border-radius:999px;border:1px solid var(--line2);background:var(--panel);cursor:pointer;white-space:nowrap;font-weight:550;transition:background .15s,border-color .15s}
+.btn:hover{border-color:var(--ink3)}
+.btn.pri{background:var(--ink);color:#F6F3EE;border-color:var(--ink)}
+.btn.pri:hover{background:#3a3d41}
+.btn.soft{background:var(--well);border-color:transparent}
+.btn.danger{color:var(--rose);border-color:rgba(180,113,107,.35)}
+.btn.sm{height:30px;padding:0 12px;font-size:12px}
+.btn.icon{width:34px;padding:0}
+.btn.icon.sm{width:30px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.link{border:0;background:none;padding:0;cursor:pointer;color:var(--moss);font-weight:550}
+.seg{display:inline-flex;background:var(--band);border-radius:999px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:none;height:28px;padding:0 13px;border-radius:999px;cursor:pointer;color:var(--ink2);font-size:12.5px;white-space:nowrap}
+.seg button.on{background:var(--panel);color:var(--ink);font-weight:600;box-shadow:0 1px 3px rgba(40,36,30,.12)}
+.inp,.sel,.ta{width:100%;height:38px;border:1px solid var(--line2);background:rgba(255,255,255,.62);border-radius:12px;padding:0 12px;outline:none;transition:border-color .15s,background .15s}
+.sel{appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2393979B' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;cursor:pointer}
+.ta{height:auto;min-height:74px;padding:10px 12px;resize:vertical;line-height:1.55}
+.inp:focus,.sel:focus,.ta:focus{border-color:var(--moss);background:#fff}
+.inp.n{text-align:right}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field>span{font-size:11.5px;color:var(--ink2);font-weight:500}
+.field>em{font-style:normal;font-size:11px;color:var(--ink3)}
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+.fgrid .full{grid-column:1/-1}
+.pillsel{display:inline-flex;align-items:center;height:32px;border-radius:999px;border:1px solid var(--line2);background:var(--panel);padding:0 28px 0 12px;appearance:none;cursor:pointer;font-size:12.5px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2393979B' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center}
+.pillsel.on{border-color:var(--moss);color:var(--moss);font-weight:600}
+
+/* ---------- canvas (organic container with tab) ---------- */
+.canvas{position:relative;background:var(--canvas);border-radius:var(--r-xl);padding:30px 32px;box-shadow:0 30px 60px -48px rgba(52,46,36,.5)}
+.canvas.tabbed{margin-top:44px;border-top-left-radius:0}
+.tab{position:absolute;left:0;top:-44px;height:44px;padding:0 24px 0 26px;background:var(--canvas);border-radius:24px 24px 0 0;display:flex;align-items:center;gap:10px;font-weight:600;font-size:13px;white-space:nowrap}
+.tab::after{content:'';position:absolute;right:-24px;bottom:0;width:24px;height:24px;background:radial-gradient(circle at 100% 0,transparent 23.5px,var(--canvas) 24px)}
+.tab .faint{font-weight:400}
+.canvas.lift{padding-bottom:72px}
+.flow{position:relative;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px;margin:-46px 20px 0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh);padding:20px 22px;min-width:0}
+.panel.plain{box-shadow:none}
+.panel h3{margin:0;font-size:13.5px;font-weight:620;letter-spacing:-.015em}
+.phead{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.phead h3{margin-right:auto}
+.phead p{margin:2px 0 0;font-size:11.5px;color:var(--ink3);flex-basis:100%}
+.s3{grid-column:span 3}.s4{grid-column:span 4}.s5{grid-column:span 5}.s6{grid-column:span 6}.s7{grid-column:span 7}.s8{grid-column:span 8}.s12{grid-column:span 12}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.spacer{flex:1}
+.note{font-size:11.5px;color:var(--ink3);line-height:1.55}
+.chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 9px;border-radius:999px;font-size:11px;font-weight:550;background:var(--well);color:var(--ink2);white-space:nowrap}
+.chip i{width:6px;height:6px;border-radius:50%;display:block}
+
+/* ---------- overview ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:28px;align-items:start}
+.hero-label{font-size:12.5px;color:var(--ink2);margin:0 0 4px}
+.big{font-size:clamp(38px,5.2vw,66px);font-weight:250;letter-spacing:-.045em;line-height:1.02;margin:0}
+.big small{font-size:.36em;letter-spacing:-.01em;color:var(--ink3);font-weight:400;margin-left:8px}
+.hero-sub{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px}
+.hs{display:flex;flex-direction:column}
+.hs span{font-size:11.5px;color:var(--ink3)}
+.hs b{font-size:16px;font-weight:560;letter-spacing:-.02em}
+.kstrip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin-top:26px;border-top:1px solid var(--line)}
+.k{padding:14px 16px 2px 0;border-right:1px solid var(--line);margin-right:16px}
+.k:last-child{border-right:0;margin-right:0}
+.k span{font-size:11.5px;color:var(--ink3);display:block}
+.k b{font-size:18px;font-weight:450;letter-spacing:-.03em}
+.goal{background:var(--panel);border:1px solid var(--line);border-radius:30px 30px 30px 10px;padding:20px;box-shadow:var(--sh);display:grid;grid-template-columns:104px 1fr;gap:16px;align-items:center}
+.ring{position:relative;width:104px;height:104px}
+.ring svg{width:104px;height:104px;transform:rotate(-90deg)}
+.ring div{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring b{font-size:21px;font-weight:450;letter-spacing:-.03em;line-height:1}
+.ring small{display:block;font-size:10.5px;color:var(--ink3);margin-top:3px}
+.goal ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.goal li{display:flex;justify-content:space-between;gap:8px;font-size:12px}
+.goal li span{color:var(--ink3)}
+.goal li b{font-weight:560}
+.goal .gbtn{grid-column:1/-1}
+
+.ribbon{margin-top:30px;background:var(--band);border-radius:30px;padding:16px 14px 10px;display:grid;grid-template-columns:repeat(12,minmax(44px,1fr));gap:4px;overflow-x:auto;scrollbar-width:none}
+.ribbon::-webkit-scrollbar{display:none}
+.rm{border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:7px;padding:8px 2px 6px;border-radius:18px;cursor:pointer;transition:background .15s}
+.rm:hover{background:rgba(251,250,247,.5)}
+.rm.on{background:var(--panel);box-shadow:var(--sh)}
+.rm .v{font-size:10.5px;color:var(--ink2);height:14px;white-space:nowrap}
+.rm .bar{position:relative;width:30px;height:128px}
+.rm .pl{position:absolute;left:0;right:0;bottom:0;border:1.5px solid var(--mist);border-radius:11px;background:repeating-linear-gradient(135deg,transparent 0 4px,rgba(159,177,198,.22) 4px 5px)}
+.rm .ac{position:absolute;left:6px;right:6px;bottom:0;border-radius:8px;background:var(--moss)}
+.rm .pf{position:absolute;left:-4px;right:-4px;height:2px;border-radius:2px;background:var(--ochre)}
+.rm .pf.neg{background:var(--rose)}
+.rm .m{font-size:11.5px;font-weight:600;color:var(--ink2)}
+.rm.on .m{color:var(--ink)}
+.rm.now .m::after{content:'';display:block;width:4px;height:4px;border-radius:50%;background:var(--ochre);margin:2px auto 0}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);margin-top:10px;padding-left:6px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:4px;display:inline-block}
+.sw.pl{border:1.5px solid var(--mist);background:repeating-linear-gradient(135deg,transparent 0 3px,rgba(159,177,198,.3) 3px 4px)}
+.sw.ac{background:var(--moss)}
+.sw.pf{height:3px;border-radius:2px;background:var(--ochre)}
+.hl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.hl li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.hl li:last-child{border-bottom:0}
+.hl .t{font-size:11px;color:var(--ink3)}
+.hl .nm{font-weight:560;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.hl .nm:hover{text-decoration:underline}
+.hl .vv{grid-row:1/3;grid-column:2;align-self:center;text-align:right;font-weight:560}
+
+/* ---------- hbars ---------- */
+.hb{display:flex;flex-direction:column;gap:10px}
+.hbr{display:grid;grid-template-columns:minmax(70px,.9fr) minmax(0,2fr) auto;gap:10px;align-items:center}
+.hbr .lb{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbr .tr{height:18px;position:relative}
+.hbr .fl{position:absolute;left:0;top:0;height:10px;border-radius:6px}
+.hbr .fl2{position:absolute;left:0;top:12px;height:4px;border-radius:3px;background:var(--ochre)}
+.hbr .fl2.neg{background:var(--rose)}
+.hbr .vl{font-size:12px;text-align:right;white-space:nowrap}
+.hbr .vl small{display:block;font-size:10.5px;color:var(--ink3)}
+
+/* ---------- svg charts ---------- */
+.chart{width:100%;min-height:60px}
+.chart svg{display:block;overflow:visible}
+.chart .gl{stroke:var(--line);stroke-width:1}
+.chart .gl.z{stroke:var(--line2)}
+.chart .tk{font-size:10px;fill:var(--ink3)}
+.chart .xl{font-size:10.5px;fill:var(--ink2)}
+.clegend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);margin-bottom:8px}
+.clegend span{display:inline-flex;align-items:center;gap:6px}
+
+/* ---------- responsive table ---------- */
+.tw{overflow-x:auto;margin:0 -4px;padding:0 4px}
+.rt{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px}
+.rt th{font-weight:500;color:var(--ink3);text-align:left;padding:9px 10px;font-size:11.5px;border-bottom:1px solid var(--line2);white-space:nowrap;background:inherit}
+.rt th.sortable{cursor:pointer}
+.rt td{padding:11px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.rt tbody tr.click{cursor:pointer}
+.rt tbody tr.click:hover td{background:rgba(234,230,223,.45)}
+.rt tbody tr.sel td{background:var(--ochre-s)}
+.rt .n{text-align:right;white-space:nowrap}
+.rt tfoot td{font-weight:600;border-bottom:0;border-top:1px solid var(--line2)}
+.rt .nm b{font-weight:600;display:block}
+.rt .nm small{color:var(--ink3);font-size:11.5px}
+.rt .act{white-space:nowrap;text-align:right}
+.rt .act .btn{margin-left:2px}
+.empty{padding:34px 20px;text-align:center;color:var(--ink2)}
+.empty b{display:block;font-size:15px;color:var(--ink);margin-bottom:4px;font-weight:600}
+.empty .row{justify-content:center;margin-top:14px}
+
+/* plan matrix */
+.mx{border-collapse:separate;border-spacing:0;font-size:12px;width:100%}
+.mx th,.mx td{padding:4px 3px;border-bottom:1px solid var(--line);white-space:nowrap}
+.mx th{color:var(--ink3);font-weight:500;font-size:11px;text-align:center;padding:8px 3px}
+.mx th:first-child,.mx td:first-child{position:sticky;left:0;background:var(--canvas);z-index:1;text-align:left;padding-right:12px;min-width:170px;max-width:220px}
+.mx td:first-child b{display:block;font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.mx td:first-child small{color:var(--ink3);font-size:11px}
+.mx input{width:100%;min-width:52px;height:32px;border:1px solid transparent;background:var(--panel);border-radius:9px;text-align:right;padding:0 7px;outline:none}
+.mx input:focus{border-color:var(--moss);background:#fff}
+.mx input.auto{background:transparent;color:var(--ink3);border-style:dashed;border-color:var(--line2)}
+.mx input.off{opacity:.45}
+.mx .tot{text-align:right;padding-left:10px;font-weight:600}
+.mx tfoot td{font-weight:600;text-align:right;background:var(--band)}
+.mx tfoot tr:first-child td{border-top:1px solid var(--line2)}
+.mx tfoot td:first-child{background:var(--band)}
+.mplan{display:none}
+.mcard{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:14px;margin-bottom:12px}
+.mcard .mgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:10px}
+.mcard label{display:flex;flex-direction:column;font-size:11px;color:var(--ink3);gap:3px}
+.mcard input{width:100%;min-width:0;height:44px;border:1px solid var(--line2);border-radius:12px;background:#fff9;text-align:right;padding:0 10px;font-size:16px;outline:none}
+.mcard input.auto{border-style:dashed;color:var(--ink3);background:transparent}
+
+/* pva */
+.pva td.n b{font-weight:600}
+.bar-pct{height:6px;border-radius:4px;background:var(--well);overflow:hidden;margin-top:5px;min-width:60px}
+.bar-pct i{display:block;height:100%;background:var(--moss);border-radius:4px}
+.progress{height:10px;border-radius:6px;background:var(--well);position:relative;overflow:hidden}
+.progress i{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
+.progress i.p{background:var(--mist)} .progress i.a{background:var(--moss);top:3px;bottom:3px}
+
+/* ---------- drawer / modal / toast ---------- */
+.scrim{position:fixed;inset:0;background:rgba(40,38,34,.26);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:10px;right:10px;bottom:10px;width:min(640px,calc(100% - 20px));background:var(--canvas);border-radius:34px;z-index:50;display:flex;flex-direction:column;transform:translateX(calc(100% + 20px));transition:transform .28s cubic-bezier(.2,.8,.2,1);box-shadow:0 30px 80px -30px rgba(40,36,30,.5)}
+.drawer.on{transform:none}
+.dhead{padding:22px 26px 0;display:flex;align-items:flex-start;gap:12px}
+.dhead h2{margin:0;font-size:19px;font-weight:620;letter-spacing:-.03em;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.dsum{margin:16px 26px 0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:12px 4px}
+.dsum div{padding:0 12px;border-right:1px solid var(--line)}
+.dsum div:last-child{border-right:0}
+.dsum span{font-size:11px;color:var(--ink3);display:block}
+.dsum b{font-size:15px;font-weight:550;letter-spacing:-.02em;white-space:nowrap}
+.dtabs{padding:14px 26px 0}
+.dbody{flex:1;overflow-y:auto;padding:16px 26px 20px}
+.dfoot{padding:14px 26px 18px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center}
+.sec{margin-bottom:22px}
+.sec h4{margin:0 0 10px;font-size:12.5px;font-weight:620}
+.crow{display:grid;grid-template-columns:1.25fr 1fr 88px 124px 92px 34px;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.crow .inp,.crow .sel{height:34px;font-size:12.5px}
+.crow .hint{grid-column:1/-1;font-size:11px;color:var(--ink3);margin-top:-2px}
+.qadd{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-46%);opacity:0;pointer-events:none;width:min(520px,calc(100% - 24px));max-height:calc(100% - 40px);display:flex;flex-direction:column;background:var(--canvas);border-radius:30px;z-index:60;transition:opacity .18s,transform .18s;box-shadow:0 40px 90px -30px rgba(40,36,30,.55)}
+.modal.on{opacity:1;transform:translate(-50%,-50%);pointer-events:auto}
+.modal .mh{padding:22px 24px 4px}
+.modal .mh h2{margin:0;font-size:17px;font-weight:620;letter-spacing:-.02em}
+.modal .mb{padding:12px 24px;overflow-y:auto}
+.modal .mf{padding:12px 24px 20px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.modal .err{color:var(--rose);font-size:12px;margin-top:8px;min-height:16px}
+.toasts{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:80;align-items:center;pointer-events:none}
+.toast{background:var(--ink);color:#F4F1EB;padding:10px 18px;border-radius:999px;font-size:12.5px;box-shadow:0 12px 30px -10px rgba(0,0,0,.4);max-width:min(520px,92vw);pointer-events:auto}
+.toast.err{background:#7E3E39}
+.banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--rose-s);border:1px solid rgba(180,113,107,.3);color:#6d3833;border-radius:20px;padding:12px 16px;margin-bottom:18px}
+.banner.demo{background:var(--ochre-s);border-color:rgba(185,154,94,.35);color:#5e4b24}
+.banner b{font-weight:600}
+.loading{padding:80px 0;text-align:center;color:var(--ink3)}
+
+/* ---------- mobile ---------- */
+.bnav,.fab,.mtop{display:none}
+@media (max-width:1100px){
+  .hero{grid-template-columns:1fr!important}
+  .goal{max-width:460px}
+  .s3,.s4,.s5{grid-column:span 6}.s7,.s8{grid-column:span 12}
+}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{display:none}
+  .main{padding:10px 12px calc(96px + var(--safe-b))}
+  .top{margin-bottom:14px;gap:8px}
+  .top h1{font-size:19px;width:100%}
+  .top .newbtn{display:none}
+  .mtop{display:flex;align-items:center;gap:10px;padding:4px 2px 12px}
+  .mtop .brand{padding:0}
+  .mtop .conn{margin-left:auto;padding:7px 10px;border-radius:999px}
+  .canvas{padding:22px 18px;border-radius:30px}
+  .canvas.tabbed{margin-top:40px}
+  .tab{height:40px;top:-40px;padding:0 18px;font-size:12.5px}
+  .canvas.lift{padding-bottom:22px}
+  .flow{margin:14px 0 0;grid-template-columns:1fr;gap:12px}
+  .flow>*{grid-column:1/-1!important}
+  .s3,.s4,.s5,.s6,.s7,.s8{grid-column:1/-1}
+  .panel{padding:16px;border-radius:22px}
+  .kstrip{grid-template-columns:repeat(2,1fr)}
+  .k:nth-child(2){border-right:0;margin-right:0}
+  .k{padding:12px 10px 4px 0}
+  .ribbon{grid-template-columns:repeat(12,50px);margin-left:-8px;margin-right:-8px}
+  .inp,.sel,.ta{height:44px;font-size:16px}
+  .ta{height:auto}
+  .btn{height:40px}
+  .btn.sm{height:34px}
+  .fgrid{grid-template-columns:1fr 1fr;gap:12px}
+  .rt thead{display:none}
+  .rt,.rt tbody,.rt tfoot,.rt tr,.rt td{display:block;width:auto}
+  .rt tr{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:10px 14px;margin-bottom:10px}
+  .rt td{display:flex;justify-content:space-between;align-items:center;gap:12px;border:0;padding:5px 0;text-align:right}
+  .rt td::before{content:attr(data-l);color:var(--ink3);text-align:left;font-size:12px}
+  .rt td.lead{display:block;text-align:left;font-size:14px;padding-bottom:8px;margin-bottom:4px;border-bottom:1px solid var(--line)}
+  .rt td.lead::before,.rt td.act::before{display:none}
+  .rt td.act{justify-content:flex-end;padding-top:8px}
+  .rt tbody tr.click:hover td{background:none}
+  .rt tfoot tr{background:var(--band)}
+  .rt tfoot td{border:0}
+  .dplan{display:none}
+  .mplan{display:block}
+  .drawer{top:auto;left:0;right:0;bottom:0;width:100%;height:94vh;border-radius:28px 28px 0 0;transform:translateY(100%)}
+  .dhead,.dtabs,.dbody,.dfoot{padding-left:18px;padding-right:18px}
+  .dfoot{padding-bottom:calc(14px + var(--safe-b))}
+  .dsum{margin:14px 18px 0;grid-template-columns:repeat(2,1fr);row-gap:10px}
+  .dsum div:nth-child(2){border-right:0}
+  .crow{grid-template-columns:1fr 1fr;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px;margin-bottom:8px}
+  .crow .del{justify-self:end}
+  .modal{top:auto;bottom:0;left:0;width:100%;transform:translateY(20px);border-radius:28px 28px 0 0;max-height:92vh}
+  .modal.on{transform:none}
+  .modal .mf{padding-bottom:calc(18px + var(--safe-b))}
+  .modal .mf .btn{flex:1}
+  .bnav{display:flex;position:fixed;left:10px;right:10px;bottom:calc(10px + var(--safe-b));height:62px;background:rgba(251,250,247,.94);backdrop-filter:blur(12px);border:1px solid var(--line);border-radius:999px;box-shadow:0 18px 40px -18px rgba(40,36,30,.4);z-index:30;padding:0 6px;justify-content:space-around;align-items:center}
+  .bnav a,.bnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:var(--ink3);border:0;background:none;height:54px;justify-content:center;border-radius:999px;cursor:pointer}
+  .bnav .on{color:var(--ink);font-weight:600;background:var(--well)}
+  .fab{display:grid;place-items:center;position:fixed;right:18px;bottom:calc(86px + var(--safe-b));width:54px;height:54px;border-radius:20px 20px 20px 6px;background:var(--ink);color:#F4F1EB;border:0;box-shadow:0 14px 30px -10px rgba(40,36,30,.6);z-index:31;cursor:pointer}
+  .fab svg.i{width:22px;height:22px}
+  .toasts{bottom:calc(90px + var(--safe-b))}
+}
+@media (max-width:420px){.fgrid{grid-template-columns:1fr}.kstrip .k b{font-size:16px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side" aria-label="주 메뉴">
+    <div class="brand"><div class="brand-mark"><span></span></div><div><b>매출 플래너</b><small>개인 사업 수익 관리</small></div></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot">
+      <div class="saving" id="saving"></div>
+      <button class="conn" data-a="openConn" id="connBox"><i class="dot"></i><span>연결 확인 중</span></button>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="mtop"><div class="brand"><div class="brand-mark"><span></span></div><b>매출 플래너</b></div><button class="conn" data-a="openConn" id="connBoxM"><i class="dot"></i><span></span></button></div>
+    <header class="top" id="top"></header>
+    <div id="banner"></div>
+    <section id="view" aria-live="polite"></section>
+  </main>
+</div>
+<nav class="bnav" id="bnav" aria-label="하단 메뉴"></nav>
+<button class="fab" data-a="fab" aria-label="빠른 입력"><svg class="i"><use href="#i-plus"/></svg></button>
+<div class="scrim" id="scrim" data-a="closeTop"></div>
+<aside class="drawer" id="drawer" aria-label="수익 항목 편집" role="dialog"></aside>
+<div class="modal" id="modal" role="dialog" aria-modal="true"></div>
+<div class="toasts" id="toasts"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-overview" viewBox="0 0 24 24"><path d="M4 13a8 8 0 0 1 16 0"/><path d="M12 13l4-4"/><circle cx="12" cy="13" r="1.3"/><path d="M4 18h16"/></symbol>
+  <symbol id="i-items" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+  <symbol id="i-plan" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="4"/><path d="M8 3v4M16 3v4M3.5 10h17"/></symbol>
+  <symbol id="i-actual" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-analytics" viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-6"/></symbol>
+  <symbol id="i-scen" viewBox="0 0 24 24"><path d="M4 18c4 0 5-12 9-12s4 6 7 6"/><path d="M4 18c5 0 7-4 16-4" opacity=".6"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="3"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+</svg>
+<script>
+'use strict';
+/* =====================================================================
+   1. 상수 / 유틸
+   ===================================================================== */
+const MODELS = [
+  { id:'one_time',     ko:'단건 판매',  en:'One-time',     unit:'건' },
+  { id:'per_item',     ko:'개당 판매',  en:'Per Item',     unit:'개' },
+  { id:'per_project',  ko:'프로젝트',   en:'Per Project',  unit:'건' },
+  { id:'commission',   ko:'커미션',     en:'Commission',   unit:'건' },
+  { id:'subscription', ko:'구독',       en:'Subscription', unit:'명', monthly:true },
+  { id:'license',      ko:'라이선스',   en:'License',      unit:'개' },
+  { id:'b2b_contract', ko:'B2B 계약',   en:'B2B Contract', unit:'건' },
+  { id:'other',        ko:'기타',       en:'Other',        unit:'단위' },
+];
+const MODEL = Object.fromEntries(MODELS.map(m => [m.id, m]));
+const modelOf = id => MODEL[id] || MODEL.other;
+
+const STATUSES = [
+  { id:'idea',       ko:'아이디어',  c:'#B9B3A8' },
+  { id:'planning',   ko:'기획',      c:'#AFA6C6' },
+  { id:'production', ko:'제작',      c:'#9FB1C6' },
+  { id:'ready',      ko:'준비 완료', c:'#B99A5E' },
+  { id:'active',     ko:'판매 중',   c:'#4F6D5E' },
+  { id:'paused',     ko:'일시 중지', c:'#B4716B' },
+  { id:'completed',  ko:'완료',      c:'#7E858C' },
+];
+const STATUS = Object.fromEntries(STATUSES.map(s => [s.id, s]));
+
+const COST_TYPES = [
+  { id:'production',  ko:'제작비',        mode:'amount',  basis:'unit' },
+  { id:'platform',    ko:'플랫폼 수수료', mode:'percent' },
+  { id:'payment',     ko:'결제 수수료',   mode:'percent' },
+  { id:'advertising', ko:'광고비',        mode:'amount',  basis:'fixed', rec:'monthly' },
+  { id:'outsourcing', ko:'외주비',        mode:'amount',  basis:'unit' },
+  { id:'shipping',    ko:'배송비',        mode:'amount',  basis:'unit' },
+  { id:'packaging',   ko:'포장비',        mode:'amount',  basis:'unit' },
+  { id:'fixed',       ko:'고정비',        mode:'amount',  basis:'fixed', rec:'monthly' },
+  { id:'other',       ko:'기타 비용',     mode:'amount',  basis:'unit' },
+];
+const COST = Object.fromEntries(COST_TYPES.map(c => [c.id, c]));
+
+const CUR = { KRW:{s:'₩',d:0,ko:'원'}, USD:{s:'$',d:2,ko:'달러'}, EUR:{s:'€',d:2,ko:'유로'}, JPY:{s:'¥',d:0,ko:'엔'} };
+const DEFAULT_FX = { KRW:1, USD:1380, EUR:1500, JPY:9.3 };
+const DEFAULT_TYPES = ['Digital Art','Digital Product','Digital Service','Design','UI/UX','Web','AI','Creative Coding','Image / Video Effect','Content','Prayer / Writing Service','Consulting','B2B Project','Physical Goods','Subscription','Other'];
+const DEFAULT_CATS  = ['디지털아트','디지털 상품','디지털 서비스','디자인','콘텐츠','굿즈','B2B','구독'];
+const DEFAULT_CH    = ['Website','Gumroad','Etsy','YouTube','Instagram','스마트스토어','크몽','B2B','Direct'];
+const PALETTE = ['#4F6D5E','#9FB1C6','#B99A5E','#AFA6C6','#8FA79A','#CDB894','#7F8C99','#B4716B','#A7B7A0','#C8B6C9','#6E8497','#D2B9A6'];
+const MONTHS = Array.from({ length:12 }, (_, i) => `${i + 1}월`);
+const TAX = { business_types:{ko:'사업 유형', key:'type'}, categories:{ko:'카테고리', key:'cat'}, channels:{ko:'판매 채널', key:'ch'} };
+const FAIL = Symbol('fail');
+
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const num = v => { const n = typeof v === 'number' ? v : parseFloat(String(v ?? '').replace(/[,\s]/g, '')); return Number.isFinite(n) ? n : 0; };
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() :
+  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16); }));
+const nowISO = () => new Date().toISOString();
+const todayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+const icon = n => `<svg class="i"><use href="#i-${n}"/></svg>`;
+const sum = (arr, f = x => x) => arr.reduce((a, x) => a + f(x), 0);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+class AppError extends Error {}
+
+const base = () => S.settings?.base_currency || 'KRW';
+function money(v, cur = base(), opt = {}) {
+  if (v == null || !Number.isFinite(v)) return '—';
+  const c = CUR[cur] || CUR.KRW, a = Math.abs(v), sign = v < 0 ? '−' : '';
+  if (opt.compact) {
+    if (cur === 'KRW' || cur === 'JPY') {
+      if (a >= 1e8) return `${sign}${c.s}${+(a / 1e8).toFixed(a >= 1e9 ? 1 : 2)}억`;
+      if (a >= 1e4) return `${sign}${c.s}${Math.round(a / 1e4).toLocaleString('ko-KR')}만`;
+    } else {
+      if (a >= 1e6) return `${sign}${c.s}${+(a / 1e6).toFixed(1)}M`;
+      if (a >= 1e3) return `${sign}${c.s}${+(a / 1e3).toFixed(1)}K`;
+    }
+    return `${sign}${c.s}${a.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
+  }
+  return `${sign}${c.s}${a.toLocaleString('ko-KR', { maximumFractionDigits: c.d, minimumFractionDigits: 0 })}`;
+}
+const pct = (v, d = 1) => (v == null || !Number.isFinite(v)) ? '—' : `${v.toFixed(d)}%`;
+const qfmt = v => (v == null || !Number.isFinite(v)) ? '—' : (Number.isInteger(Math.round(v * 10) / 10) ? Math.round(v).toLocaleString('ko-KR') : (Math.round(v * 10) / 10).toLocaleString('ko-KR'));
+const signed = (v, f) => (v > 0 ? '+' : '') + f(v);
+const cls = v => v > 0 ? 'pos' : v < 0 ? 'neg' : '';
+
+/* =====================================================================
+   2. 저장소 — Supabase REST(PostgREST) / 데모(브라우저 저장)
+   ===================================================================== */
+function explainError(status, d) {
+  const m = (d && (d.message || d.hint || d.error_description || d.msg)) || '';
+  if (status === 401 || /jwt|api key|apikey/i.test(m)) return 'Supabase 키가 올바르지 않습니다. 설정에서 anon key를 확인하세요.';
+  if (d?.code === '42P01' || d?.code === 'PGRST205' || /does not exist|schema cache/i.test(m)) return '테이블을 찾을 수 없습니다. schema.sql을 Supabase SQL Editor에서 실행했는지 확인하세요.';
+  if (d?.code === '42501' || status === 403) return '접근 권한이 없습니다. schema.sql의 권한(RLS) 설정을 실행했는지 확인하세요.';
+  if (d?.code === '23503') return '연결된 데이터가 있어 처리할 수 없습니다.';
+  if (d?.code === '23514') return '허용되지 않는 값이 있습니다. 입력값을 확인하세요.';
+  return `저장소 오류(${status})${m ? ': ' + m : ''}`;
+}
+
+class RemoteStore {
+  constructor(url, key) { this.mode = 'supabase'; this.base = url.replace(/\/+$/, '') + '/rest/v1/'; this.key = key; }
+  async req(method, path, body, headers = {}) {
+    let res;
+    try {
+      res = await fetch(this.base + path, {
+        method,
+        headers: { apikey: this.key, Authorization: 'Bearer ' + this.key, 'Content-Type': 'application/json', ...headers },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    } catch (e) { throw new AppError('네트워크에 연결할 수 없습니다. 인터넷 연결과 Supabase URL을 확인하세요.'); }
+    const text = await res.text(); let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch (e) { data = null; }
+    if (!res.ok) throw new AppError(explainError(res.status, data));
+    return data;
+  }
+  q(filters) { return Object.entries(filters).map(([k, v]) => `${k}=eq.${encodeURIComponent(v)}`).join('&'); }
+  async list(t) {
+    const out = [];
+    for (let from = 0; ; from += 1000) {
+      const d = await this.req('GET', `${t}?select=*&order=created_at.asc`, undefined, { Range: `${from}-${from + 999}`, 'Range-Unit': 'items' });
+      out.push(...(d || [])); if (!d || d.length < 1000) break;
+    }
+    return out;
+  }
+  insert(t, rows)        { return this.req('POST', t, [].concat(rows), { Prefer: 'return=representation' }); }
+  async update(t, id, p) { const d = await this.req('PATCH', `${t}?id=eq.${encodeURIComponent(id)}`, p, { Prefer: 'return=representation' }); return d?.[0]; }
+  remove(t, id)          { return this.req('DELETE', `${t}?id=eq.${encodeURIComponent(id)}`); }
+  removeMatch(t, f)      { return this.req('DELETE', `${t}?${this.q(f)}`); }
+  upsert(t, rows, oc)    { return this.req('POST', `${t}?on_conflict=${oc}`, [].concat(rows), { Prefer: 'resolution=merge-duplicates,return=representation' }); }
+  ping()                 { return this.req('GET', 'settings?select=id&limit=1'); }
+}
+
+class DemoStore {
+  constructor() { this.mode = 'demo'; this.k = 'spp.demo.v1'; try { this.db = JSON.parse(localStorage.getItem(this.k)) || {}; } catch (e) { this.db = {}; } }
+  save() { try { localStorage.setItem(this.k, JSON.stringify(this.db)); } catch (e) { throw new AppError('브라우저 저장 공간에 저장하지 못했습니다.'); } }
+  t(n) { return (this.db[n] ||= []); }
+  clone(x) { return JSON.parse(JSON.stringify(x)); }
+  async list(n) { return this.clone(this.t(n)); }
+  async insert(n, rows) { const rs = [].concat(rows).map(r => ({ id: uid(), created_at: nowISO(), ...r })); this.t(n).push(...rs); this.save(); return this.clone(rs); }
+  async update(n, id, p) { const r = this.t(n).find(x => x.id === id); if (!r) throw new AppError('대상을 찾을 수 없습니다. 새로고침 후 다시 시도하세요.'); Object.assign(r, p); this.save(); return this.clone(r); }
+  async remove(n, id) { this.db[n] = this.t(n).filter(x => x.id !== id); this.cascade(n, id); this.save(); }
+  async removeMatch(n, f) { this.db[n] = this.t(n).filter(x => !Object.entries(f).every(([k, v]) => String(x[k]) === String(v))); this.save(); }
+  cascade(n, id) {
+    if (n === 'revenue_items') ['costs','sales_plans','actual_sales'].forEach(t => this.db[t] = this.t(t).filter(x => x.item_id !== id));
+    const nullify = (t, col) => this.t(t).forEach(x => { if (x[col] === id) x[col] = null; });
+    if (n === 'categories') nullify('revenue_items', 'category_id');
+    if (n === 'business_types') nullify('revenue_items', 'business_type_id');
+    if (n === 'channels') { nullify('revenue_items', 'channel_id'); nullify('actual_sales', 'channel_id'); }
+  }
+  async upsert(n, rows, oc) {
+    const keys = oc.split(','), out = [];
+    for (const r of [].concat(rows)) {
+      let ex = this.t(n).find(x => keys.every(k => String(x[k]) === String(r[k])));
+      if (ex) Object.assign(ex, r); else { ex = { id: uid(), created_at: nowISO(), ...r }; this.t(n).push(ex); }
+      out.push(this.clone(ex));
+    }
+    this.save(); return out;
+  }
+  async ping() { return true; }
+}
+
+const Conn = {
+  get() {
+    const c = window.SPP_CONFIG || {};
+    if (c.SUPABASE_URL && c.SUPABASE_ANON_KEY) return { url: c.SUPABASE_URL, key: c.SUPABASE_ANON_KEY, src: 'config' };
+    try { const l = JSON.parse(localStorage.getItem('spp.conn')); if (l?.url && l?.key) return { ...l, src: 'device' }; } catch (e) {}
+    return null;
+  },
+  set(url, key) { localStorage.setItem('spp.conn', JSON.stringify({ url, key })); localStorage.removeItem('spp.demo'); },
+  clear() { localStorage.removeItem('spp.conn'); },
+  demo() { return localStorage.getItem('spp.demo') === '1'; },
+};
+
+/* =====================================================================
+   3. 상태
+   ===================================================================== */
+const NOW = new Date();
+const S = {
+  store: null, loading: false, error: null,
+  items: [], costs: [], plans: [], sales: [], categories: [], business_types: [], channels: [], settings: null,
+  idx: {},
+  ui: {
+    page: 'overview', year: NOW.getFullYear(), month: NOW.getMonth() + 1,
+    q: '', f: { category:'', model:'', channel:'', status:'', year:'' }, sort: 'updated', dir: -1,
+    planView: 'monthly', mix: 'category',
+    sale: { scope: 'month', item: '', q: '' },
+    pva: { scope: 'month', item: '' },
+    ana: { basis: 'plan', period: 'year', group: 'category' },
+    sc: { tab: 'scenario', item: '', prices: null, basisQty: 'qty_expected', elasticity: 0 },
+  },
+};
+const TABLES = ['revenue_items','costs','sales_plans','actual_sales','categories','business_types','channels','settings'];
+const STATE_KEY = { revenue_items:'items', costs:'costs', sales_plans:'plans', actual_sales:'sales', categories:'categories', business_types:'business_types', channels:'channels', settings:'settingsRows' };
+
+function rebuild() {
+  const I = { costs:{}, plans:{}, sales:{}, salesYM:{}, cat:{}, type:{}, ch:{}, item:{} };
+  S.items.forEach(i => I.item[i.id] = i);
+  S.costs.forEach(c => (I.costs[c.item_id] ||= []).push(c));
+  S.plans.forEach(p => { const y = +p.year, m = +p.month; ((I.plans[p.item_id] ||= {})[y] ||= {})[m] = p; });
+  S.sales.forEach(s => {
+    const [y, m] = String(s.sale_date || '').split('-').map(Number); s._y = y; s._m = m;
+    (I.sales[s.item_id] ||= []).push(s);
+    ((I.salesYM[s.item_id] ||= {})[`${y}-${m}`] ||= []).push(s);
+  });
+  S.categories.forEach(x => I.cat[x.id] = x);
+  S.business_types.forEach(x => I.type[x.id] = x);
+  S.channels.forEach(x => I.ch[x.id] = x);
+  S.idx = I;
+}
+const catName  = id => S.idx.cat[id]?.name  || '미분류';
+const typeName = id => S.idx.type[id]?.name || '미분류';
+const chName   = id => S.idx.ch[id]?.name   || '채널 없음';
+const colorOf  = (list, id) => { const x = list.find(v => v.id === id); if (x?.color) return x.color; const i = list.findIndex(v => v.id === id); return i < 0 ? '#C9C4BA' : PALETTE[i % PALETTE.length]; };
+const sortedTax = t => [...S[t]].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0) || String(a.created_at).localeCompare(String(b.created_at)));
+
+/* =====================================================================
+   4. 계산 엔진
+   - 항목 수량(qty_*)은 1년 계획 기준. 구독 모델은 평균 구독자 수 × 12개월
+   - 비용: percent(매출 대비 %) / unit(판매 1단위당) / fixed monthly(매월) / fixed once(1회, 출시월)
+   - 합계는 기본 통화로 환산, '아이디어' 상태 항목은 합계에서 제외
+   ===================================================================== */
+const Calc = {
+  rate(c) { const r = num(S.settings?.fx_rates?.[c]); return r > 0 ? r : (DEFAULT_FX[c] || 1); },
+  toBase(v, c) { const b = base(); return c === b ? v : v * Calc.rate(c) / Calc.rate(b); },
+  mult(it) { return modelOf(it.revenue_model).monthly ? 12 : 1; },
+  parts(it, costs) {
+    const cs = costs || S.idx.costs[it.id] || [];
+    const p = { pct:0, unit:0, monthly:0, once:0 };
+    cs.forEach(c => {
+      const v = num(c.value);
+      if (c.mode === 'percent') p.pct += v;
+      else if (c.basis === 'unit') p.unit += v;
+      else if (c.recurrence === 'once') p.once += v;
+      else p.monthly += v;
+    });
+    return p;
+  },
+  /** 연간 계획 계산 (항목 통화) */
+  annual(it, qty, price = num(it.price), costs) {
+    const p = Calc.parts(it, costs), units = num(qty) * Calc.mult(it);
+    const revenue = price * units;
+    const variable = revenue * p.pct / 100 + units * p.unit;
+    const fixed = p.monthly * 12 + p.once;
+    const cost = variable + fixed, profit = revenue - cost;
+    return { qty: num(qty), units, revenue, variable, fixed, cost, profit, margin: revenue ? profit / revenue * 100 : null };
+  },
+  breakEven(it, price = num(it.price), costs) {
+    const p = Calc.parts(it, costs), m = Calc.mult(it);
+    const vUnit = p.unit + price * p.pct / 100, cm = price - vUnit;
+    const fixedA = p.monthly * 12 + p.once;
+    const beUnits = cm > 0 ? fixedA / cm : null;
+    return {
+      price, vUnit, cm, cmRatio: price ? cm / price * 100 : null, fixedA, fixedM: p.monthly, once: p.once,
+      beQty: beUnits == null ? null : beUnits / m, beRevenue: beUnits == null ? null : beUnits * price,
+      beMonthly: cm > 0 ? p.monthly / cm : null,
+    };
+  },
+  active(it, y, m) {
+    if (!it.launch_date) return true;
+    const [ly, lm] = it.launch_date.split('-').map(Number);
+    return y * 12 + m >= ly * 12 + lm;
+  },
+  onceAt(it, y, m) {
+    const src = it.launch_date || (it.created_at || '').slice(0, 10) || todayStr();
+    const [ly, lm] = src.split('-').map(Number);
+    return ly === y && lm === m;
+  },
+  hasPlan(it, y) { return !!S.idx.plans[it.id]?.[y]; },
+  autoQty(it, y, m) { if (!Calc.active(it, y, m)) return 0; const q = num(it.qty_expected); return modelOf(it.revenue_model).monthly ? q : q / 12; },
+  planQty(it, y, m) { const py = S.idx.plans[it.id]?.[y]; return py ? num(py[m]?.quantity) : Calc.autoQty(it, y, m); },
+  monthPlan(it, y, m) {
+    const p = Calc.parts(it), qty = Calc.planQty(it, y, m), revenue = qty * num(it.price);
+    const cost = revenue * p.pct / 100 + qty * p.unit + (Calc.active(it, y, m) ? p.monthly : 0) + (Calc.onceAt(it, y, m) ? p.once : 0);
+    return { qty, revenue, cost, profit: revenue - cost };
+  },
+  monthActual(it, y, m) {
+    const ss = S.idx.salesYM[it.id]?.[`${y}-${m}`] || [];
+    let qty = 0, revenue = 0, extra = 0; const byCh = {};
+    ss.forEach(s => { qty += num(s.quantity); revenue += num(s.amount); extra += num(s.extra_cost); const k = s.channel_id || it.channel_id || '_none'; byCh[k] = (byCh[k] || 0) + num(s.amount); });
+    const p = Calc.parts(it);
+    const passed = y * 12 + m <= NOW.getFullYear() * 12 + NOW.getMonth() + 1;
+    const fixed = passed ? (Calc.active(it, y, m) ? p.monthly : 0) + (Calc.onceAt(it, y, m) ? p.once : 0) : 0;
+    const cost = revenue * p.pct / 100 + qty * p.unit + fixed + extra;
+    return { qty, revenue, cost, profit: revenue - cost, count: ss.length, byCh };
+  },
+  included() { return S.items.filter(i => i.status !== 'idea'); },
+  month(it, y, m, kind) { return kind === 'plan' ? Calc.monthPlan(it, y, m) : Calc.monthActual(it, y, m); },
+  /** 기본 통화 환산 합계 */
+  sumMonth(y, m, kind, items = Calc.included()) {
+    const t = { qty:0, revenue:0, cost:0, profit:0 };
+    items.forEach(it => { const r = Calc.month(it, y, m, kind); t.qty += r.qty; t.revenue += Calc.toBase(r.revenue, it.currency); t.cost += Calc.toBase(r.cost, it.currency); t.profit += Calc.toBase(r.profit, it.currency); });
+    return t;
+  },
+  series(y, kind, items) { return MONTHS.map((_, i) => Calc.sumMonth(y, i + 1, kind, items)); },
+  total(arr) { return { qty: sum(arr, x => x.qty), revenue: sum(arr, x => x.revenue), cost: sum(arr, x => x.cost), profit: sum(arr, x => x.profit) }; },
+  itemYear(it, y, kind) { return Calc.total(MONTHS.map((_, i) => Calc.month(it, y, i + 1, kind))); },
+  scenarioBase(it, key) { const a = Calc.annual(it, it[key]); return { ...a, revenueB: Calc.toBase(a.revenue, it.currency), costB: Calc.toBase(a.cost, it.currency), profitB: Calc.toBase(a.profit, it.currency) }; },
+};
+const monthlyTarget = () => num(S.settings?.monthly_target) || num(S.settings?.annual_target) / 12;
+
+/** 그룹 집계: key = category | channel | type | model | item */
+function groupAgg(key, basis, period, y = S.ui.year, m = S.ui.month) {
+  const map = new Map();
+  const add = (k, label, color, r, f = 1) => {
+    let g = map.get(k); if (!g) { g = { id:k, label, color, revenue:0, cost:0, profit:0, qty:0 }; map.set(k, g); }
+    g.revenue += r.revenue * f; g.cost += r.cost * f; g.profit += r.profit * f; g.qty += r.qty * f;
+  };
+  const months = period === 'month' ? [m] : MONTHS.map((_, i) => i + 1);
+  Calc.included().forEach(it => {
+    months.forEach(mm => {
+      const raw = Calc.month(it, y, mm, basis);
+      const r = { qty: raw.qty, revenue: Calc.toBase(raw.revenue, it.currency), cost: Calc.toBase(raw.cost, it.currency), profit: Calc.toBase(raw.profit, it.currency) };
+      if (key === 'channel') {
+        if (basis === 'actual' && raw.revenue > 0) {
+          Object.entries(raw.byCh).forEach(([ch, rev]) => add(ch, chName(ch), colorOf(S.channels, ch), r, rev / raw.revenue));
+        } else add(it.channel_id || '_none', chName(it.channel_id), colorOf(S.channels, it.channel_id), r);
+      } else if (key === 'category') add(it.category_id || '_none', catName(it.category_id), colorOf(S.categories, it.category_id), r);
+      else if (key === 'type') add(it.business_type_id || '_none', typeName(it.business_type_id), colorOf(S.business_types, it.business_type_id), r);
+      else if (key === 'model') add(it.revenue_model, modelOf(it.revenue_model).ko, PALETTE[MODELS.findIndex(x => x.id === it.revenue_model) % PALETTE.length], r);
+      else add(it.id, it.name, PALETTE[S.items.indexOf(it) % PALETTE.length], r);
+    });
+  });
+  return [...map.values()].map(g => ({ ...g, margin: g.revenue ? g.profit / g.revenue * 100 : null })).sort((a, b) => b.revenue - a.revenue);
+}
+
+/* =====================================================================
+   5. 차트 (SVG / HTML, 외부 라이브러리 없음)
+   ===================================================================== */
+function niceTicks(min, max, n = 4) {
+  const span = max - min || 1, raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(s => s * mag).find(s => s >= raw) || raw;
+  const lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step, t = [];
+  for (let v = lo; v <= hi + step / 2; v += step) t.push(Math.abs(v) < step / 1e6 ? 0 : v);
+  return t;
+}
+const Charts = {
+  /** 막대(그룹) + 선 콤보 */
+  bars(el, { labels, series = [], lines = [], h = 220, fmt = v => money(v, base(), { compact:true }), full = v => money(v) }) {
+    const W = Math.max(260, el.clientWidth || 600), H = h, pl = 56, pr = 8, pt = 10, pb = 24;
+    const vals = [...series.flatMap(s => s.values), ...lines.flatMap(s => s.values), 0];
+    let mn = Math.min(...vals), mx = Math.max(...vals); if (mn === mx) mx = mn + 1;
+    const ticks = niceTicks(mn, mx, 4); mn = ticks[0]; mx = ticks[ticks.length - 1];
+    const y = v => pt + (H - pt - pb) * (1 - (v - mn) / (mx - mn));
+    const n = labels.length, bw = (W - pl - pr) / n, g = Math.min(bw * .7, 64), sw = g / Math.max(1, series.length);
+    let s = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" role="img">`;
+    ticks.forEach(t => { s += `<line class="gl${t === 0 ? ' z' : ''}" x1="${pl}" x2="${W - pr}" y1="${y(t)}" y2="${y(t)}"/><text class="tk" x="${pl - 8}" y="${y(t) + 3.5}" text-anchor="end">${esc(fmt(t))}</text>`; });
+    labels.forEach((l, i) => {
+      const x0 = pl + bw * i + (bw - g) / 2;
+      series.forEach((se, j) => {
+        const v = se.values[i] || 0, top = Math.min(y(v), y(0)), hh = Math.max(v ? 1 : 0, Math.abs(y(v) - y(0)));
+        const x = x0 + j * sw + 1, w = Math.max(2, sw - 2);
+        const st = se.outline ? `fill="${se.color}" fill-opacity=".16" stroke="${se.color}" stroke-width="1.3"` : `fill="${se.color}"`;
+        s += `<rect x="${x}" y="${top}" width="${w}" height="${hh}" rx="${Math.min(4, w / 3)}" ${st}><title>${esc(l)} ${esc(se.name)}: ${esc(full(v))}</title></rect>`;
+      });
+      if (n <= 16 || i % 2 === 0) s += `<text class="xl" x="${pl + bw * i + bw / 2}" y="${H - 6}" text-anchor="middle">${esc(l)}</text>`;
+    });
+    lines.forEach(ln => {
+      const pts = ln.values.map((v, i) => [pl + bw * i + bw / 2, y(v || 0)]);
+      s += `<polyline fill="none" stroke="${ln.color}" stroke-width="1.8" ${ln.dash ? 'stroke-dasharray="4 4"' : ''} points="${pts.map(p => p.join(',')).join(' ')}"/>`;
+      pts.forEach((p, i) => s += `<circle cx="${p[0]}" cy="${p[1]}" r="2.8" fill="var(--panel)" stroke="${ln.color}" stroke-width="1.6"><title>${esc(labels[i])} ${esc(ln.name)}: ${esc(full(ln.values[i] || 0))}</title></circle>`);
+    });
+    return s + '</svg>';
+  },
+  legend(items) {
+    return `<div class="clegend">${items.map(i => `<span><i class="sw" style="${i.line ? `height:3px;background:${i.color}` : i.outline ? `border:1.5px solid ${i.color};background:${i.color}29` : `background:${i.color}`}"></i>${esc(i.name)}</span>`).join('')}</div>`;
+  },
+  /** 가로 막대 (매출 + 순이익 보조선) */
+  hbars(rows, { fmt = v => money(v, base(), { compact:true }), sub } = {}) {
+    if (!rows.length) return `<p class="note">표시할 데이터가 없습니다.</p>`;
+    const mx = Math.max(1, ...rows.map(r => Math.abs(r.value)), ...rows.map(r => Math.abs(r.value2 || 0)));
+    return `<div class="hb">${rows.map(r => `
+      <div class="hbr" title="${esc(r.label)}">
+        <span class="lb">${esc(r.label)}</span>
+        <div class="tr"><i class="fl" style="width:${clamp(Math.abs(r.value) / mx * 100, 0, 100)}%;background:${r.color || 'var(--mist)'}"></i>${r.value2 != null ? `<i class="fl2 ${r.value2 < 0 ? 'neg' : ''}" style="width:${clamp(Math.abs(r.value2) / mx * 100, 0, 100)}%"></i>` : ''}</div>
+        <span class="vl">${fmt(r.value)}${sub ? `<small>${sub(r)}</small>` : ''}</span>
+      </div>`).join('')}</div>`;
+  },
+  ring(p, size = 104, stroke = 9) {
+    const r = (size - stroke) / 2, c = 2 * Math.PI * r, v = clamp(p || 0, 0, 100);
+    return `<svg viewBox="0 0 ${size} ${size}"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--well)" stroke-width="${stroke}"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--moss)" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c * v / 100} ${c}"/></svg>`;
+  },
+};
+</script>
+<script>
+/* =====================================================================
+   6. 데이터 로드 / 변경
+   ===================================================================== */
+async function loadAll() {
+  S.loading = true; S.error = null; render();
+  try {
+    const res = await Promise.all(TABLES.map(t => S.store.list(t)));
+    TABLES.forEach((t, i) => S[STATE_KEY[t]] = res[i]);
+    if (!S.categories.length && !S.business_types.length && !S.channels.length) await seedTaxonomy();
+    S.settings = (S.settingsRows || []).find(x => +x.id === 1) || await ensureSettings();
+    S.settings.fx_rates = { ...DEFAULT_FX, ...(S.settings.fx_rates || {}) };
+    rebuild();
+  } catch (e) { S.error = e.message || String(e); }
+  S.loading = false; setConn(); render();
+}
+async function refresh(tables) {
+  try {
+    const res = await Promise.all(tables.map(t => S.store.list(t)));
+    tables.forEach((t, i) => S[STATE_KEY[t]] = res[i]);
+    if (tables.includes('settings')) { S.settings = S.settingsRows.find(x => +x.id === 1) || S.settings; S.settings.fx_rates = { ...DEFAULT_FX, ...(S.settings.fx_rates || {}) }; }
+    rebuild(); render();
+  } catch (e) { toast('데이터를 다시 불러오지 못했습니다: ' + e.message, 'err', 6000); }
+}
+async function seedTaxonomy() {
+  const mk = list => list.map((name, i) => ({ id: uid(), name, sort_order: i, color: PALETTE[i % PALETTE.length] }));
+  const [a, b, c] = [mk(DEFAULT_TYPES), mk(DEFAULT_CATS), mk(DEFAULT_CH)];
+  await S.store.insert('business_types', a); await S.store.insert('categories', b); await S.store.insert('channels', c);
+  S.business_types = await S.store.list('business_types'); S.categories = await S.store.list('categories'); S.channels = await S.store.list('channels');
+}
+async function ensureSettings() {
+  const r = await S.store.upsert('settings', [{ id:1, annual_target:0, monthly_target:null, base_currency:'KRW', fx_rates:DEFAULT_FX, preferences:{} }], 'id');
+  return r[0];
+}
+let savingT;
+function setSaving(state, err) {
+  const el = $('#saving'); if (!el) return;
+  clearTimeout(savingT);
+  el.className = 'saving' + (err ? ' err' : '');
+  el.textContent = state === 'on' ? '저장 중…' : state === 'pending' ? '변경 사항 대기 중…' : err ? '저장 실패 — 다시 시도하세요' : '저장됨';
+  if (state === 'done') savingT = setTimeout(() => el.textContent = '', 2400);
+}
+async function mutate(label, fn, success) {
+  if (!S.store) { toast('저장소가 연결되지 않았습니다. 설정에서 Supabase를 연결하세요.', 'err'); return FAIL; }
+  setSaving('on');
+  try { const r = await fn(); setSaving('done'); if (success) toast(success); return r; }
+  catch (e) { setSaving('err', true); toast(`${label} 실패 — ${e.message}`, 'err', 7000); return FAIL; }
+}
+const ITEM_FIELDS = ['id','name','business_type_id','category_id','channel_id','revenue_model','status','launch_date','description','notes','price','currency','qty_min','qty_expected','qty_target','qty_max'];
+function pickItem(d) {
+  const r = {}; ITEM_FIELDS.forEach(k => r[k] = d[k]);
+  ['business_type_id','category_id','channel_id','launch_date'].forEach(k => { if (!r[k]) r[k] = null; });
+  ['price','qty_min','qty_expected','qty_target','qty_max'].forEach(k => r[k] = Math.max(0, num(r[k])));
+  r.name = String(r.name || '').trim(); r.updated_at = nowISO();
+  return r;
+}
+const pickCost = c => ({ id: c.id || uid(), item_id: c.item_id, cost_type: c.cost_type, label: c.label || null, mode: c.mode, basis: c.basis || 'unit', recurrence: c.recurrence || 'monthly', value: num(c.value) });
+
+async function saveItem(d) {
+  const row = pickItem(d);
+  if (!row.name) { toast('항목 이름을 입력하세요.', 'err'); return false; }
+  const isNew = !S.idx.item[row.id];
+  const r = await mutate('저장', async () => {
+    if (isNew) await S.store.insert('revenue_items', [row]); else await S.store.update('revenue_items', row.id, row);
+    await S.store.removeMatch('costs', { item_id: row.id });
+    const cs = d.costs.filter(c => num(c.value) !== 0 || c.label).map(c => pickCost({ ...c, id: uid(), item_id: row.id }));
+    if (cs.length) await S.store.insert('costs', cs);
+    return true;
+  }, isNew ? '수익 항목을 추가했습니다' : '변경 사항을 저장했습니다');
+  if (r === FAIL) return false;
+  await refresh(['revenue_items','costs']); return true;
+}
+async function duplicateItem(id) {
+  const it = S.idx.item[id]; if (!it) return;
+  const nid = uid();
+  const row = { ...pickItem(it), id: nid, name: `${it.name} (복사본)` };
+  const cs = (S.idx.costs[id] || []).map(c => pickCost({ ...c, id: uid(), item_id: nid }));
+  const ps = S.plans.filter(p => p.item_id === id).map(p => ({ id: uid(), item_id: nid, year: p.year, month: p.month, quantity: p.quantity }));
+  const r = await mutate('복제', async () => {
+    await S.store.insert('revenue_items', [row]);
+    if (cs.length) await S.store.insert('costs', cs);
+    if (ps.length) await S.store.insert('sales_plans', ps);
+  }, '항목을 복제했습니다');
+  if (r !== FAIL) await refresh(['revenue_items','costs','sales_plans']);
+  return nid;
+}
+async function deleteItem(id) {
+  const it = S.idx.item[id]; if (!it) return false;
+  const nS = (S.idx.sales[id] || []).length, nP = S.plans.filter(p => p.item_id === id).length;
+  const ok = await confirmDlg('수익 항목 삭제', `“${esc(it.name)}”을(를) 삭제합니다. 연결된 비용, 월별 계획 ${nP}건, 실적 ${nS}건도 함께 삭제되며 되돌릴 수 없습니다.`, '삭제', true);
+  if (!ok) return false;
+  const r = await mutate('삭제', () => S.store.remove('revenue_items', id), '항목을 삭제했습니다');
+  if (r === FAIL) return false;
+  await refresh(['revenue_items','costs','sales_plans','actual_sales']); return true;
+}
+
+/* ---- 월별 계획: 입력 즉시 반영, 0.7초 뒤 일괄 저장 ---- */
+const Pending = new Map(); let flushT = null;
+function setLocalPlan(itemId, y, m, q) {
+  let p = S.plans.find(x => x.item_id === itemId && +x.year === y && +x.month === m);
+  if (p) p.quantity = q; else S.plans.push({ id: 'tmp-' + uid(), item_id: itemId, year: y, month: m, quantity: q });
+}
+function queuePlan(itemId, y, m, q) {
+  const it = S.idx.item[itemId];
+  if (it && !Calc.hasPlan(it, y)) {   // 자동 분배 → 직접 입력으로 전환 시 12개월을 먼저 채움
+    for (let mm = 1; mm <= 12; mm++) { const aq = Math.round(Calc.autoQty(it, y, mm) * 10) / 10; setLocalPlan(itemId, y, mm, aq); Pending.set(`${itemId}|${y}|${mm}`, { item_id:itemId, year:y, month:mm, quantity:aq }); }
+  }
+  setLocalPlan(itemId, y, m, q);
+  Pending.set(`${itemId}|${y}|${m}`, { item_id:itemId, year:y, month:m, quantity:q });
+  rebuild(); setSaving('pending');
+  clearTimeout(flushT); flushT = setTimeout(flushPlans, 700);
+}
+async function flushPlans() {
+  clearTimeout(flushT);
+  const rows = [...Pending.values()]; Pending.clear();
+  if (!rows.length) return;
+  const r = await mutate('월별 계획 저장', () => S.store.upsert('sales_plans', rows, 'item_id,year,month'));
+  if (r === FAIL) { await refresh(['sales_plans']); return; }
+  r.forEach(row => { const i = S.plans.findIndex(x => x.item_id === row.item_id && +x.year === +row.year && +x.month === +row.month); if (i >= 0) S.plans[i] = row; else S.plans.push(row); });
+  rebuild();
+}
+async function fillPlan(itemId, mode) {
+  const it = S.idx.item[itemId], y = S.ui.year; if (!it) return;
+  if (mode === 'clear') {
+    const ok = await confirmDlg('월별 계획 초기화', `“${esc(it.name)}”의 ${y}년 직접 입력한 계획을 지웁니다. 이후에는 예상 수량이 자동 분배됩니다.`, '초기화', true);
+    if (!ok) return;
+    await flushPlans();
+    const r = await mutate('계획 초기화', () => S.store.removeMatch('sales_plans', { item_id: itemId, year: y }), '자동 분배로 되돌렸습니다');
+    if (r !== FAIL) await refresh(['sales_plans']);
+    return;
+  }
+  const rows = MONTHS.map((_, i) => ({ item_id:itemId, year:y, month:i + 1, quantity: Math.round(Calc.autoQty(it, y, i + 1) * 10) / 10 }));
+  if (Calc.hasPlan(it, y) && !(await confirmDlg('균등 분배', `“${esc(it.name)}”의 ${y}년 계획을 예상 수량 기준 균등 분배 값으로 덮어씁니다.`, '덮어쓰기'))) return;
+  await flushPlans();
+  const r = await mutate('균등 분배', () => S.store.upsert('sales_plans', rows, 'item_id,year,month'), '예상 수량을 월별로 분배했습니다');
+  if (r !== FAIL) await refresh(['sales_plans']);
+}
+
+/* =====================================================================
+   7. UI 헬퍼: 토스트 / 모달 / 테이블 / 옵션
+   ===================================================================== */
+function toast(msg, type = '', ms = 2800) {
+  const t = document.createElement('div'); t.className = 'toast ' + type; t.setAttribute('role', type === 'err' ? 'alert' : 'status'); t.textContent = msg;
+  $('#toasts').appendChild(t); setTimeout(() => t.remove(), ms);
+}
+const Modal = {
+  resolve: null,
+  open(html, onMount) {
+    const m = $('#modal'); m.innerHTML = html; m.classList.add('on'); $('#scrim').classList.add('on');
+    onMount && onMount(m);
+    setTimeout(() => { const f = m.querySelector('[autofocus],input,select,button'); f && f.focus(); }, 60);
+  },
+  close(v) {
+    $('#modal').classList.remove('on');
+    if (!$('#drawer').classList.contains('on')) $('#scrim').classList.remove('on');
+    const r = Modal.resolve; Modal.resolve = null; r && r(v);
+  },
+  isOpen() { return $('#modal').classList.contains('on'); },
+};
+function confirmDlg(title, msg, ok = '확인', danger = false) {
+  return new Promise(res => {
+    Modal.resolve = res;
+    Modal.open(`<div class="mh"><h2>${esc(title)}</h2></div><div class="mb"><p class="muted" style="margin:0;line-height:1.65">${msg}</p></div>
+      <div class="mf"><button class="btn" data-a="mClose" data-v="0">취소</button><button class="btn ${danger ? 'danger' : 'pri'}" data-a="mClose" data-v="1" autofocus>${esc(ok)}</button></div>`);
+  });
+}
+function promptDlg(title, label, value = '') {
+  return new Promise(res => {
+    Modal.resolve = res;
+    Modal.open(`<div class="mh"><h2>${esc(title)}</h2></div><div class="mb"><label class="field"><span>${esc(label)}</span><input class="inp" id="pv" value="${esc(value)}" autofocus></label></div>
+      <div class="mf"><button class="btn" data-a="mClose" data-v="">취소</button><button class="btn pri" data-a="mPrompt">확인</button></div>`,
+      m => m.querySelector('#pv').addEventListener('keydown', e => { if (e.key === 'Enter') Modal.close(e.target.value.trim() || null); }));
+  });
+}
+/** 반응형 테이블: cols = [{l, n?, lead?, r(row)}] */
+function table(cols, rows, { foot, rowAttr, cls = '' } = {}) {
+  return `<div class="tw"><table class="rt ${cls}"><thead><tr>${cols.map(c => `<th class="${c.n ? 'n' : ''}">${esc(c.l)}</th>`).join('')}</tr></thead>
+  <tbody>${rows.map(r => `<tr ${rowAttr ? rowAttr(r) : ''}>${cols.map(c => `<td data-l="${esc(c.l)}" class="${c.n ? 'n' : ''}${c.lead ? ' lead nm' : ''}${c.act ? ' act' : ''}">${c.r(r)}</td>`).join('')}</tr>`).join('')}</tbody>
+  ${foot ? `<tfoot><tr>${cols.map((c, i) => `<td data-l="${esc(c.l)}" class="${c.n ? 'n' : ''}${i === 0 ? ' lead' : ''}">${foot[i] ?? ''}</td>`).join('')}</tr></tfoot>` : ''}</table></div>`;
+}
+const opts = (list, sel, empty) => (empty != null ? `<option value="">${esc(empty)}</option>` : '') + list.map(o => `<option value="${esc(o.id)}" ${String(o.id) === String(sel ?? '') ? 'selected' : ''}>${esc(o.ko || o.name)}</option>`).join('');
+const seg = (action, cur, list) => `<div class="seg" role="tablist">${list.map(([v, l]) => `<button role="tab" aria-selected="${v === cur}" class="${v === cur ? 'on' : ''}" data-a="${action}" data-v="${esc(v)}">${esc(l)}</button>`).join('')}</div>`;
+const statusChip = s => { const x = STATUS[s] || STATUS.idea; return `<span class="chip"><i style="background:${x.c}"></i>${x.ko}</span>`; };
+const yearOptions = () => { const ys = new Set([NOW.getFullYear() - 1, NOW.getFullYear(), NOW.getFullYear() + 1, S.ui.year]); S.sales.forEach(s => s._y && ys.add(s._y)); S.plans.forEach(p => ys.add(+p.year)); return [...ys].sort(); };
+
+/* =====================================================================
+   8. 셸 / 라우팅
+   ===================================================================== */
+const PAGES = [
+  { id:'overview',  ko:'개요',          icon:'overview',  sub:'사업 전체 상태' },
+  { id:'items',     ko:'수익 항목',     icon:'items',     sub:'가격·수량·비용 관리' },
+  { id:'plan',      ko:'판매 계획',     icon:'plan',      sub:'항목별 월 판매량' },
+  { id:'actual',    ko:'실제 매출',     icon:'actual',    sub:'실적 기록과 계획 대비' },
+  { id:'analytics', ko:'분석',          icon:'analytics', sub:'카테고리·채널·항목별' },
+  { id:'scenarios', ko:'시나리오',      icon:'scen',      sub:'시나리오·가격·손익분기·목표' },
+  { id:'settings',  ko:'설정',          icon:'settings',  sub:'목표·통화·분류·연결' },
+];
+function renderNav() {
+  $('#nav').innerHTML = PAGES.map(p => `<a href="#/${p.id}" class="${S.ui.page === p.id ? 'on' : ''}" ${S.ui.page === p.id ? 'aria-current="page"' : ''}>${icon(p.icon)}${p.ko}</a>`).join('');
+  const mob = ['overview','items','plan','actual'];
+  const more = !mob.includes(S.ui.page);
+  $('#bnav').innerHTML = mob.map(id => { const p = PAGES.find(x => x.id === id); return `<a href="#/${id}" class="${S.ui.page === id ? 'on' : ''}">${icon(p.icon)}${p.ko.replace('수익 ', '').replace('판매 ', '').replace('실제 ', '')}</a>`; }).join('')
+    + `<button data-a="more" class="${more ? 'on' : ''}">${icon('more')}${more ? PAGES.find(p => p.id === S.ui.page).ko : '더보기'}</button>`;
+}
+function renderTop() {
+  const p = PAGES.find(x => x.id === S.ui.page);
+  const showY = ['overview','plan','actual','analytics','scenarios'].includes(S.ui.page);
+  const showM = ['overview','actual','analytics'].includes(S.ui.page);
+  $('#top').innerHTML = `<h1>${p.ko}<span class="sub">${p.sub}</span></h1>
+    <div class="period">
+      ${showY ? `<div class="stepper"><button data-a="yr" data-v="-1" aria-label="이전 연도">${icon('left')}</button><b>${S.ui.year}년</b><button data-a="yr" data-v="1" aria-label="다음 연도">${icon('right')}</button></div>` : ''}
+      ${showM ? `<div class="stepper"><button data-a="mo" data-v="-1" aria-label="이전 달">${icon('left')}</button><select data-in="month" aria-label="월 선택">${MONTHS.map((l, i) => `<option value="${i + 1}" ${S.ui.month === i + 1 ? 'selected' : ''}>${l}</option>`).join('')}</select><button data-a="mo" data-v="1" aria-label="다음 달">${icon('right')}</button></div>` : ''}
+    </div>
+    ${S.store ? `<button class="btn pri newbtn" data-a="newItem">${icon('plus')}새 수익 항목</button>` : ''}`;
+}
+function setConn() {
+  const st = !S.store ? ['', '저장소 연결 필요'] : S.error ? ['err', '연결 오류'] : S.store.mode === 'demo' ? ['demo', '데모 모드 · 이 브라우저에만 저장'] : ['ok', 'Supabase 연결됨'];
+  ['#connBox','#connBoxM'].forEach(s => { const b = $(s); if (!b) return; b.innerHTML = `<i class="dot ${st[0]}"></i><span>${s === '#connBoxM' ? st[1].split(' · ')[0] : st[1]}</span>`; });
+}
+function renderBanner() {
+  let h = '';
+  if (S.error) h = `<div class="banner" role="alert"><div><b>데이터를 불러오지 못했습니다.</b> ${esc(S.error)}</div><span class="spacer"></span><button class="btn sm" data-a="retry">다시 시도</button><button class="btn sm" data-a="openConn">연결 설정</button></div>`;
+  else if (S.store?.mode === 'demo') h = `<div class="banner demo"><div><b>데모 모드</b> — 데이터가 이 브라우저에만 저장됩니다. 모든 기기에서 쓰려면 Supabase를 연결하세요.</div><span class="spacer"></span><button class="btn sm" data-a="openConn">Supabase 연결</button></div>`;
+  $('#banner').innerHTML = h;
+}
+const Charts_Queue = [];
+function render() {
+  renderNav(); renderTop(); renderBanner(); setConn();
+  const v = $('#view');
+  if (!S.store) { v.innerHTML = vNoStore(); return; }
+  if (S.loading) { v.innerHTML = `<div class="loading">데이터를 불러오는 중…</div>`; return; }
+  if (S.error) { v.innerHTML = ''; return; }
+  Charts_Queue.length = 0;
+  const fn = { overview:vOverview, items:vItems, plan:vPlan, actual:vActual, analytics:vAnalytics, scenarios:vScenarios, settings:vSettings }[S.ui.page];
+  v.innerHTML = fn();
+  Charts_Queue.forEach(([id, f]) => { const el = document.getElementById(id); if (el) el.innerHTML = f(el); });
+}
+const chart = (id, f, extra = '') => { Charts_Queue.push([id, f]); return `<div class="chart" id="${id}" ${extra}></div>`; };
+function vNoStore() {
+  return `<div class="canvas tabbed"><div class="tab">시작하기</div>
+    <div class="empty" style="padding:40px 10px"><b>데이터 저장소를 연결하세요</b>
+    <p class="muted" style="max-width:460px;margin:6px auto 0">매출 계획은 Supabase에 저장되어 PC·태블릿·모바일에서 함께 쓸 수 있습니다. 먼저 둘러보고 싶다면 데모 모드로 시작하세요.</p>
+    <div class="row"><button class="btn pri" data-a="openConn">Supabase 연결</button><button class="btn" data-a="startDemo">데모 모드로 둘러보기</button></div></div></div>`;
+}
+
+/* =====================================================================
+   9. 개요 (Dashboard)
+   ===================================================================== */
+function vOverview() {
+  const y = S.ui.year, m = S.ui.month, b = base();
+  if (!S.items.length) return `<div class="canvas tabbed"><div class="tab">${y}년 ${m}월</div><div class="empty"><b>첫 수익 항목을 등록하세요</b>
+    <p class="muted" style="max-width:480px;margin:6px auto 0">디지털 상품, 서비스, 프로젝트, 구독, 굿즈 등 수익이 생기는 모든 것을 항목으로 등록하면 예상 매출과 순이익이 자동으로 계산됩니다.</p>
+    <div class="row"><button class="btn pri" data-a="newItem">${icon('plus')}새 수익 항목</button><button class="btn" data-a="seedSample">샘플 데이터로 채우기</button></div></div></div>`;
+
+  const planS = Calc.series(y, 'plan'), actS = Calc.series(y, 'actual');
+  const mp = planS[m - 1], ma = actS[m - 1];
+  const yp = Calc.total(planS), ya = Calc.total(actS);
+  const tA = num(S.settings.annual_target), tM = monthlyTarget();
+  const achP = tA ? yp.revenue / tA * 100 : null, achA = tA ? ya.revenue / tA * 100 : null, achM = tM ? mp.revenue / tM * 100 : null;
+  const activeN = S.items.filter(i => i.status === 'active').length;
+  const mx = Math.max(1, ...planS.map(s => s.revenue), ...actS.map(s => s.revenue));
+  const isNow = i => y === NOW.getFullYear() && i + 1 === NOW.getMonth() + 1;
+  const ribbon = planS.map((p, i) => {
+    const a = actS[i], hp = p.revenue / mx * 100, ha = a.revenue / mx * 100, pf = clamp(p.profit / mx * 100, 0, 100);
+    return `<button class="rm ${i + 1 === m ? 'on' : ''} ${isNow(i) ? 'now' : ''}" data-a="pickMonth" data-v="${i + 1}" title="${MONTHS[i]} · 계획 ${money(p.revenue)} · 실적 ${money(a.revenue)} · 계획 순이익 ${money(p.profit)}">
+      <span class="v">${p.revenue ? money(p.revenue, b, { compact:true }) : ''}</span>
+      <span class="bar"><i class="pl" style="height:${hp}%"></i><i class="ac" style="height:${ha}%"></i>${p.revenue ? `<i class="pf ${p.profit < 0 ? 'neg' : ''}" style="bottom:${pf}%"></i>` : ''}</span>
+      <span class="m">${MONTHS[i]}</span></button>`;
+  }).join('');
+
+  // 하이라이트 (연간 예상 기준)
+  const ann = Calc.included().map(it => ({ it, ...Calc.scenarioBase(it, 'qty_expected') }));
+  const top = (k, f) => [...ann].filter(f || (() => true)).sort((a, c) => c[k] - a[k])[0];
+  const tr = top('revenueB'), tp = top('profitB'), tm = top('margin', x => x.revenue > 0 && x.margin != null);
+  const recent = [...S.items].sort((a, c) => String(c.created_at).localeCompare(String(a.created_at))).slice(0, 3);
+  const hlRow = (t, x, v) => x ? `<li><span class="t">${t}</span><span class="nm" data-a="editItem" data-id="${x.it.id}">${esc(x.it.name)}</span><span class="vv">${v}</span></li>` : '';
+
+  // 믹스
+  const mixKey = S.ui.mix;
+  const mix = groupAgg(mixKey, 'plan', 'year');
+  // 시나리오 합계
+  const sc = [['qty_min','보수적'],['qty_expected','현실적'],['qty_max','최선']].map(([k, l]) => {
+    const rs = Calc.included().map(it => Calc.scenarioBase(it, k));
+    return { l, revenue: sum(rs, r => r.revenueB), profit: sum(rs, r => r.profitB) };
+  });
+  const perf = groupAgg('item', 'plan', 'year').slice(0, 6);
+
+  return `
+  <div class="canvas tabbed lift">
+    <div class="tab">${y}년 ${m}월 <span class="faint">${activeN}개 판매 중</span></div>
+    <div class="hero">
+      <div>
+        <p class="hero-label">${m}월 계획 매출</p>
+        <p class="big">${money(mp.revenue)}</p>
+        <div class="hero-sub">
+          <div class="hs"><span>${m}월 계획 순이익</span><b class="${cls(mp.profit)}">${money(mp.profit)}</b></div>
+          <div class="hs"><span>이익률</span><b>${pct(mp.revenue ? mp.profit / mp.revenue * 100 : null)}</b></div>
+          <div class="hs"><span>${m}월 실제 매출</span><b>${money(ma.revenue)}</b></div>
+          <div class="hs"><span>${m}월 실제 순이익</span><b class="${cls(ma.profit)}">${money(ma.profit)}</b></div>
+        </div>
+        <div class="kstrip">
+          <div class="k"><span>연간 계획 매출</span><b>${money(yp.revenue, b, { compact:true })}</b></div>
+          <div class="k"><span>연간 계획 순이익</span><b class="${cls(yp.profit)}">${money(yp.profit, b, { compact:true })}</b></div>
+          <div class="k"><span>연간 실제 매출</span><b>${money(ya.revenue, b, { compact:true })}</b></div>
+          <div class="k"><span>연간 실제 순이익</span><b class="${cls(ya.profit)}">${money(ya.profit, b, { compact:true })}</b></div>
+        </div>
+      </div>
+      <aside class="goal" aria-label="목표 매출 달성률">
+        <div class="ring">${Charts.ring(achP)}<div><span><b>${achP == null ? '—' : Math.round(achP) + '%'}</b><small>목표 대비</small></span></div></div>
+        <ul>
+          <li><span>연간 목표</span><b>${tA ? money(tA, b, { compact:true }) : '미설정'}</b></li>
+          <li><span>계획 매출</span><b>${money(yp.revenue, b, { compact:true })}</b></li>
+          <li><span>실적 누계</span><b>${money(ya.revenue, b, { compact:true })} <span class="faint">${achA == null ? '' : pct(achA, 0)}</span></b></li>
+          <li><span>${m}월 목표 대비</span><b>${achM == null ? '—' : pct(achM, 0)}</b></li>
+        </ul>
+        <button class="btn sm soft gbtn" data-a="goGoal">${tA ? '목표와 필요 판매량 보기' : '목표 매출 설정하기'}</button>
+      </aside>
+    </div>
+    <div class="ribbon" role="group" aria-label="월별 매출">${ribbon}</div>
+    <div class="legend"><span><i class="sw pl"></i>계획 매출</span><span><i class="sw ac"></i>실제 매출</span><span><i class="sw pf"></i>계획 순이익</span><span class="faint">월을 누르면 해당 월로 이동합니다</span></div>
+  </div>
+
+  <div class="flow">
+    <section class="panel s4">
+      <div class="phead"><h3>하이라이트</h3><p>연간 예상 수량 기준</p></div>
+      <ul class="hl">
+        ${hlRow('가장 높은 예상 매출', tr, money(tr?.revenueB, b, { compact:true }))}
+        ${hlRow('가장 높은 예상 순이익', tp, `<span class="${cls(tp?.profitB)}">${money(tp?.profitB, b, { compact:true })}</span>`)}
+        ${hlRow('가장 높은 수익률', tm, pct(tm?.margin))}
+        ${recent.map((it, i) => `<li><span class="t">${i === 0 ? '최근 등록' : ''}</span><span class="nm" data-a="editItem" data-id="${it.id}">${esc(it.name)}</span><span class="vv">${statusChip(it.status)}</span></li>`).join('')}
+      </ul>
+    </section>
+    <section class="panel s4">
+      <div class="phead"><h3>${mixKey === 'category' ? '카테고리별' : '채널별'} 매출</h3>${seg('mix', mixKey, [['category','카테고리'],['channel','채널']])}<p>${y}년 계획 · 가는 선은 순이익</p></div>
+      ${Charts.hbars(mix.slice(0, 7).map(g => ({ label:g.label, value:g.revenue, value2:g.profit, color:g.color })), { sub: r => `순이익 ${money(r.value2, b, { compact:true })}` })}
+    </section>
+    <section class="panel s4">
+      <div class="phead"><h3>시나리오 비교</h3><p>연간 · 보수적=최소, 현실적=예상, 최선=최대 수량</p></div>
+      ${Charts.legend([{ name:'매출', color:'#9FB1C6' }, { name:'순이익', color:'#B99A5E' }])}
+      ${chart('ovSc', el => Charts.bars(el, { labels: sc.map(s => s.l), series: [{ name:'매출', color:'#9FB1C6', values: sc.map(s => s.revenue) }, { name:'순이익', color:'#B99A5E', values: sc.map(s => s.profit) }], h: 180 }))}
+    </section>
+    <section class="panel s7">
+      <div class="phead"><h3>월별 매출과 순이익</h3><p>${y}년 계획 대비 실적</p></div>
+      ${Charts.legend([{ name:'계획 매출', color:'#9FB1C6', outline:true }, { name:'실제 매출', color:'#4F6D5E' }, { name:'계획 순이익', color:'#B99A5E', line:true }, { name:'실제 순이익', color:'#B4716B', line:true }])}
+      ${chart('ovMonthly', el => Charts.bars(el, { labels: MONTHS, series: [{ name:'계획 매출', color:'#9FB1C6', outline:true, values: planS.map(s => s.revenue) }, { name:'실제 매출', color:'#4F6D5E', values: actS.map(s => s.revenue) }], lines: [{ name:'계획 순이익', color:'#B99A5E', values: planS.map(s => s.profit) }, { name:'실제 순이익', color:'#B4716B', dash:true, values: actS.map(s => s.profit) }], h: 240 }))}
+    </section>
+    <section class="panel s5">
+      <div class="phead"><h3>수익 항목 성과</h3><button class="link" data-a="nav" data-v="analytics">전체 분석</button><p>${y}년 계획 매출 상위 · 가는 선은 순이익</p></div>
+      ${Charts.hbars(perf.map(g => ({ label:g.label, value:g.revenue, value2:g.profit, color:'#9FB1C6', m:g.margin })), { sub: r => `이익률 ${pct(r.m)}` })}
+    </section>
+  </div>`;
+}
+
+/* =====================================================================
+   10. 수익 항목 목록 (검색 / 필터 / 정렬)
+   ===================================================================== */
+function filteredItems() {
+  const f = S.ui.f, q = S.ui.q.trim().toLowerCase();
+  let list = S.items.filter(it =>
+    (!f.category || (f.category === '_none' ? !it.category_id : it.category_id === f.category)) &&
+    (!f.model || it.revenue_model === f.model) &&
+    (!f.channel || (f.channel === '_none' ? !it.channel_id : it.channel_id === f.channel)) &&
+    (!f.status || it.status === f.status) &&
+    (!f.year || (it.launch_date || '').startsWith(f.year)) &&
+    (!q || [it.name, it.description, it.notes, catName(it.category_id), typeName(it.business_type_id), chName(it.channel_id)].join(' ').toLowerCase().includes(q)));
+  const rows = list.map(it => ({ it, a: Calc.scenarioBase(it, 'qty_expected') }));
+  const key = { name: r => r.it.name, revenue: r => r.a.revenueB, profit: r => r.a.profitB, margin: r => r.a.margin ?? -1e9, price: r => Calc.toBase(num(r.it.price), r.it.currency), updated: r => r.it.updated_at || r.it.created_at || '', status: r => STATUSES.findIndex(s => s.id === r.it.status) }[S.ui.sort];
+  rows.sort((x, y) => { const a = key(x), c = key(y); return (typeof a === 'string' ? a.localeCompare(c, 'ko') : a - c) * S.ui.dir; });
+  return rows;
+}
+function vItems() {
+  const f = S.ui.f, b = base(), rows = filteredItems();
+  const yrs = [...new Set(S.items.map(i => (i.launch_date || '').slice(0, 4)).filter(Boolean))].sort();
+  const fsel = (k, list, label) => `<select class="pillsel ${f[k] ? 'on' : ''}" data-in="filter" data-k="${k}" aria-label="${label}"><option value="">${label} 전체</option>${list}</select>`;
+  const tot = { r: sum(rows, r => r.a.revenueB), c: sum(rows, r => r.a.costB), p: sum(rows, r => r.a.profitB) };
+  const anyF = Object.values(f).some(Boolean) || S.ui.q;
+  const cols = [
+    { l:'항목', lead:true, r: r => `<b>${esc(r.it.name)}</b><small>${esc(typeName(r.it.business_type_id))} · ${esc(catName(r.it.category_id))}</small>` },
+    { l:'수익 모델', r: r => `${modelOf(r.it.revenue_model).ko}<br><small class="faint">${esc(chName(r.it.channel_id))}</small>` },
+    { l:'상태', r: r => statusChip(r.it.status) },
+    { l:'가격', n:true, r: r => money(num(r.it.price), r.it.currency) + (modelOf(r.it.revenue_model).monthly ? '<small class="faint">/월</small>' : '') },
+    { l:'예상 수량', n:true, r: r => `${qfmt(num(r.it.qty_expected))}<small class="faint"> ${modelOf(r.it.revenue_model).unit}</small>` },
+    { l:'예상 매출', n:true, r: r => money(r.a.revenueB, b, { compact:true }) },
+    { l:'예상 순이익', n:true, r: r => `<span class="${cls(r.a.profitB)}">${money(r.a.profitB, b, { compact:true })}</span>` },
+    { l:'이익률', n:true, r: r => pct(r.a.margin) },
+    { l:'', act:true, r: r => `<button class="btn icon sm" data-a="editItem" data-id="${r.it.id}" aria-label="수정">${icon('edit')}</button><button class="btn icon sm" data-a="dupItem" data-id="${r.it.id}" aria-label="복제">${icon('copy')}</button><button class="btn icon sm" data-a="delItem" data-id="${r.it.id}" aria-label="삭제">${icon('trash')}</button>` },
+  ];
+  return `<div class="canvas tabbed"><div class="tab">${S.items.length}개 항목 <span class="faint">금액은 연간 예상 기준</span></div>
+    <div class="row" style="margin-bottom:12px">
+      <label class="stepper" style="padding:0 12px;gap:8px;flex:1;min-width:200px;max-width:340px">${icon('search')}<input data-in="q" value="${esc(S.ui.q)}" placeholder="이름, 설명, 분류로 검색" style="border:0;background:none;outline:none;width:100%;height:32px"></label>
+      <select class="pillsel" data-in="sort" aria-label="정렬">${[['updated','최근 수정순'],['name','이름순'],['revenue','예상 매출순'],['profit','예상 순이익순'],['margin','이익률순'],['price','가격순'],['status','상태순']].map(([v, l]) => `<option value="${v}" ${S.ui.sort === v ? 'selected' : ''}>${l}</option>`).join('')}</select>
+      <button class="btn sm icon" data-a="sortDir" aria-label="정렬 방향 바꾸기" title="정렬 방향">${S.ui.dir < 0 ? '↓' : '↑'}</button>
+      <span class="spacer"></span>
+      <button class="btn pri sm" data-a="newItem">${icon('plus')}새 항목</button>
+    </div>
+    <div class="row" style="margin-bottom:16px">
+      ${fsel('category', opts(sortedTax('categories'), f.category) + `<option value="_none" ${f.category === '_none' ? 'selected' : ''}>미분류</option>`, '카테고리')}
+      ${fsel('model', opts(MODELS, f.model), '수익 모델')}
+      ${fsel('channel', opts(sortedTax('channels'), f.channel) + `<option value="_none" ${f.channel === '_none' ? 'selected' : ''}>채널 없음</option>`, '채널')}
+      ${fsel('status', opts(STATUSES, f.status), '상태')}
+      ${fsel('year', yrs.map(v => `<option ${f.year === v ? 'selected' : ''} value="${v}">${v}년 출시</option>`).join(''), '출시 연도')}
+      ${anyF ? `<button class="link" data-a="clearF">필터 초기화</button>` : ''}
+    </div>
+    ${rows.length ? table(cols, rows, { rowAttr: r => `class="click" data-a="editItem" data-id="${r.it.id}"`, foot: [`${rows.length}개 합계`, '', '', '', '', money(tot.r, b, { compact:true }), `<span class="${cls(tot.p)}">${money(tot.p, b, { compact:true })}</span>`, pct(tot.r ? tot.p / tot.r * 100 : null), ''] })
+      : `<div class="empty"><b>${S.items.length ? '조건에 맞는 항목이 없습니다' : '등록된 수익 항목이 없습니다'}</b><p class="muted">${S.items.length ? '검색어나 필터를 바꿔 보세요.' : '수익이 생기는 상품·서비스·프로젝트를 추가하세요.'}</p><div class="row">${S.items.length ? `<button class="btn" data-a="clearF">필터 초기화</button>` : `<button class="btn pri" data-a="newItem">새 수익 항목</button><button class="btn" data-a="seedSample">샘플 데이터로 채우기</button>`}</div></div>`}
+    <p class="note" style="margin-top:12px">‘아이디어’ 상태 항목은 개요·분석 합계에서 제외됩니다. 구독 모델은 평균 구독자 수 × 월 가격 × 12개월로 계산합니다.</p>
+  </div>`;
+}
+
+/* =====================================================================
+   11. 판매 계획 (월별 / 연간)
+   ===================================================================== */
+function vPlan() {
+  const y = S.ui.year, b = base();
+  const items = [...S.items].sort((a, c) => (a.status === 'idea') - (c.status === 'idea') || String(a.created_at).localeCompare(String(c.created_at)));
+  if (!items.length) return `<div class="canvas tabbed"><div class="tab">${y}년 판매 계획</div><div class="empty"><b>계획할 수익 항목이 없습니다</b><div class="row"><button class="btn pri" data-a="newItem">새 수익 항목</button></div></div></div>`;
+  const series = Calc.series(y, 'plan');
+  const head = `<div class="row" style="margin-bottom:14px">${seg('planView', S.ui.planView, [['monthly','월별 입력'],['annual','연간 요약']])}<span class="spacer"></span><span class="note">빈 칸(점선)은 예상 수량을 자동 분배한 값입니다. 숫자를 입력하면 그 연도는 직접 계획으로 바뀌고 자동 저장됩니다.</span></div>`;
+
+  if (S.ui.planView === 'annual') {
+    const rows = items.map(it => { const t = Calc.itemYear(it, y, 'plan'); return { it, t, rb: Calc.toBase(t.revenue, it.currency), cb: Calc.toBase(t.cost, it.currency), pb: Calc.toBase(t.profit, it.currency) }; });
+    const inc = rows.filter(r => r.it.status !== 'idea'), T = { r: sum(inc, r => r.rb), c: sum(inc, r => r.cb), p: sum(inc, r => r.pb) };
+    return `<div class="canvas tabbed"><div class="tab">${y}년 판매 계획</div>${head}
+      ${table([
+        { l:'항목', lead:true, r: r => `<b>${esc(r.it.name)}</b><small>${r.it.status === 'idea' ? '아이디어 · 합계 제외' : Calc.hasPlan(r.it, y) ? '직접 계획' : '자동 분배'}</small>` },
+        { l:'연간 수량', n:true, r: r => `${qfmt(r.t.qty)} <small class="faint">${modelOf(r.it.revenue_model).unit}${modelOf(r.it.revenue_model).monthly ? '·월' : ''}</small>` },
+        { l:'매출', n:true, r: r => money(r.rb) }, { l:'비용', n:true, r: r => money(r.cb) },
+        { l:'순이익', n:true, r: r => `<span class="${cls(r.pb)}">${money(r.pb)}</span>` },
+        { l:'이익률', n:true, r: r => pct(r.t.revenue ? r.t.profit / r.t.revenue * 100 : null) },
+        { l:'월평균 매출', n:true, r: r => money(r.rb / 12, b, { compact:true }) },
+      ], rows, { foot: ['합계', '', money(T.r), money(T.c), `<span class="${cls(T.p)}">${money(T.p)}</span>`, pct(T.r ? T.p / T.r * 100 : null), money(T.r / 12, b, { compact:true })] })}
+      <div class="panel plain" style="margin-top:18px">${Charts.legend([{ name:'월 매출', color:'#9FB1C6' }, { name:'월 비용', color:'#C9C1B3' }, { name:'월 순이익', color:'#B99A5E', line:true }])}
+      ${chart('planChart', el => Charts.bars(el, { labels: MONTHS, series: [{ name:'월 매출', color:'#9FB1C6', values: series.map(s => s.revenue) }, { name:'월 비용', color:'#C9C1B3', values: series.map(s => s.cost) }], lines: [{ name:'월 순이익', color:'#B99A5E', values: series.map(s => s.profit) }] }))}</div></div>`;
+  }
+
+  const cell = (it, m, mobile) => {
+    const has = Calc.hasPlan(it, y), v = Calc.planQty(it, y, m), act = Calc.active(it, y, m);
+    const val = has ? (S.idx.plans[it.id][y][m] ? qfmt(v).replace(/,/g, '') : '') : '';
+    return `<input inputmode="decimal" data-in="plan" data-id="${it.id}" data-m="${m}" value="${val}" placeholder="${has ? '0' : qfmt(v)}" class="${has ? '' : 'auto'} ${act ? '' : 'off'}" aria-label="${esc(it.name)} ${m}월 수량">`;
+  };
+  const rowTot = it => { const t = Calc.itemYear(it, y, 'plan'); return `<span data-tot="${it.id}">${qfmt(t.qty)}</span>`; };
+  const rowRev = it => { const t = Calc.itemYear(it, y, 'plan'); return `<span data-rev="${it.id}">${money(t.revenue, it.currency, { compact:true })}</span>`; };
+  const foot = (k, l) => `<tr><td>${l}</td>${series.map((s, i) => `<td data-ft="${k}-${i + 1}" class="${k === 'profit' ? cls(s.profit) : ''}">${money(s[k], b, { compact:true })}</td>`).join('')}<td data-ft="${k}-t" class="${k === 'profit' ? cls(sum(series, s => s.profit)) : ''}">${money(sum(series, s => s[k]), b, { compact:true })}</td><td></td><td></td></tr>`;
+
+  return `<div class="canvas tabbed"><div class="tab">${y}년 판매 계획</div>${head}
+    <div class="dplan tw"><table class="mx">
+      <thead><tr><th>항목</th>${MONTHS.map(l => `<th>${l}</th>`).join('')}<th>합계</th><th>매출</th><th></th></tr></thead>
+      <tbody>${items.map(it => `<tr><td><b title="${esc(it.name)}">${esc(it.name)}</b><small>${modelOf(it.revenue_model).unit}${modelOf(it.revenue_model).monthly ? ' (월 구독자)' : ''} · ${money(num(it.price), it.currency)}${it.status === 'idea' ? ' · 합계 제외' : ''}</small></td>
+        ${MONTHS.map((_, i) => `<td>${cell(it, i + 1)}</td>`).join('')}
+        <td class="tot">${rowTot(it)}</td><td class="tot">${rowRev(it)}</td>
+        <td><button class="btn sm soft" data-a="fillPlan" data-id="${it.id}" title="예상 수량을 월별로 균등 분배">분배</button>${Calc.hasPlan(it, y) ? ` <button class="btn icon sm" data-a="clearPlan" data-id="${it.id}" aria-label="계획 초기화" title="자동 분배로 되돌리기">${icon('x')}</button>` : ''}</td></tr>`).join('')}</tbody>
+      <tfoot>${foot('revenue', '월 매출')}${foot('cost', '월 비용')}${foot('profit', '월 순이익')}</tfoot>
+    </table></div>
+    <div class="mplan">${items.map(it => `<div class="mcard"><div class="row"><div style="min-width:0;flex:1"><b>${esc(it.name)}</b><div class="note">${modelOf(it.revenue_model).unit} · 합계 ${rowTot(it)} · ${rowRev(it)}</div></div><button class="btn sm soft" data-a="fillPlan" data-id="${it.id}">분배</button>${Calc.hasPlan(it, y) ? `<button class="btn icon sm" data-a="clearPlan" data-id="${it.id}" aria-label="계획 초기화">${icon('x')}</button>` : ''}</div>
+      <div class="mgrid">${MONTHS.map((l, i) => `<label>${l}${cell(it, i + 1, true)}</label>`).join('')}</div></div>`).join('')}
+      <div class="panel plain">${table([{ l:'월', lead:true, r: r => r.l }, { l:'매출', n:true, r: r => `<span data-ft="revenue-${r.m}">${money(r.s.revenue, b, { compact:true })}</span>` }, { l:'비용', n:true, r: r => `<span data-ft="cost-${r.m}">${money(r.s.cost, b, { compact:true })}</span>` }, { l:'순이익', n:true, r: r => `<span data-ft="profit-${r.m}" class="${cls(r.s.profit)}">${money(r.s.profit, b, { compact:true })}</span>` }], series.map((s, i) => ({ l: MONTHS[i], s, m: i + 1 })))}</div>
+    </div>
+  </div>`;
+}
+/** 계획 입력 중 포커스를 잃지 않도록 합계만 부분 갱신 */
+function updatePlanTotals(itemId) {
+  const y = S.ui.year, b = base(), it = S.idx.item[itemId];
+  if (it) { const t = Calc.itemYear(it, y, 'plan'); $$(`[data-tot="${itemId}"]`).forEach(e => e.textContent = qfmt(t.qty)); $$(`[data-rev="${itemId}"]`).forEach(e => e.textContent = money(t.revenue, it.currency, { compact:true })); }
+  const series = Calc.series(y, 'plan');
+  ['revenue','cost','profit'].forEach(k => {
+    series.forEach((s, i) => $$(`[data-ft="${k}-${i + 1}"]`).forEach(e => { e.textContent = money(s[k], b, { compact:true }); if (k === 'profit') e.className = cls(s.profit); }));
+    $$(`[data-ft="${k}-t"]`).forEach(e => e.textContent = money(sum(series, s => s[k]), b, { compact:true }));
+  });
+  if (it && Calc.hasPlan(it, y)) $$(`input[data-id="${itemId}"].auto`).forEach(inp => { const m = +inp.dataset.m; inp.classList.remove('auto'); if (!inp.value) inp.value = qfmt(Calc.planQty(it, y, m)).replace(/,/g, ''); inp.placeholder = '0'; });
+}
+</script>
+<script>
+/* =====================================================================
+   12. 실제 매출 + 계획 대비 실적
+   ===================================================================== */
+function saleForm(s = {}) {
+  const it = S.idx.item[s.item_id] || null;
+  const items = [...S.items].sort((a, c) => (c.status === 'active') - (a.status === 'active') || a.name.localeCompare(c.name, 'ko'));
+  return `<div class="fgrid" id="saleForm">
+    <label class="field full"><span>수익 항목</span><select class="sel" name="item_id" data-in="saleItem" required>${opts(items.map(i => ({ id:i.id, name:i.name })), s.item_id, '항목을 선택하세요')}</select></label>
+    <label class="field"><span>판매일</span><input class="inp" type="date" name="sale_date" value="${esc(s.sale_date || todayStr())}" required></label>
+    <label class="field"><span>수량 <em class="faint" data-unit>${it ? modelOf(it.revenue_model).unit : ''}</em></span><input class="inp n" name="quantity" inputmode="decimal" data-in="saleCalc" value="${esc(s.quantity ?? 1)}"></label>
+    <label class="field"><span>단가 <em class="faint" data-cur>${it ? it.currency : ''}</em></span><input class="inp n" name="unit_price" inputmode="decimal" data-in="saleCalc" value="${esc(s.unit_price ?? (it ? num(it.price) : ''))}"></label>
+    <label class="field"><span>매출 금액</span><input class="inp n" name="amount" inputmode="decimal" data-in="saleAmt" value="${esc(s.amount ?? (it ? num(it.price) : ''))}"><em>수량 × 단가로 자동 계산, 할인 등은 직접 수정</em></label>
+    <label class="field"><span>추가 비용</span><input class="inp n" name="extra_cost" inputmode="decimal" value="${esc(s.extra_cost ?? 0)}"><em>이번 판매에만 든 비용(선택)</em></label>
+    <label class="field"><span>판매 채널</span><select class="sel" name="channel_id">${opts(sortedTax('channels'), s.channel_id ?? it?.channel_id, '항목 기본 채널')}</select></label>
+    <label class="field full"><span>메모</span><input class="inp" name="memo" value="${esc(s.memo || '')}" placeholder="고객, 주문번호 등"></label>
+  </div>`;
+}
+function readSaleForm(root) {
+  const g = n => root.querySelector(`[name="${n}"]`)?.value ?? '';
+  return { item_id: g('item_id'), sale_date: g('sale_date'), quantity: num(g('quantity')), unit_price: num(g('unit_price')), amount: num(g('amount')), extra_cost: num(g('extra_cost')), channel_id: g('channel_id') || null, memo: g('memo').trim() || null };
+}
+async function saveSale(root, id) {
+  const d = readSaleForm(root);
+  if (!d.item_id) { toast('수익 항목을 선택하세요.', 'err'); return false; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.sale_date)) { toast('판매일을 확인하세요.', 'err'); return false; }
+  if (d.quantity < 0 || d.amount < 0) { toast('수량과 금액은 0 이상이어야 합니다.', 'err'); return false; }
+  const r = await mutate('실적 저장', () => id ? S.store.update('actual_sales', id, { ...d, updated_at: nowISO() }) : S.store.insert('actual_sales', [{ id: uid(), ...d }]), id ? '실적을 수정했습니다' : '실적을 기록했습니다');
+  if (r === FAIL) return false;
+  await refresh(['actual_sales']); return true;
+}
+function openSaleModal(id, preset = {}) {
+  const s = id ? S.sales.find(x => x.id === id) : { item_id: preset.item_id || S.ui.sale.item || '', ...preset };
+  if (!S.items.length) { toast('먼저 수익 항목을 등록하세요.', 'err'); return; }
+  Modal.open(`<div class="mh"><h2>${id ? '실적 수정' : '실제 매출 기록'}</h2></div><div class="mb">${saleForm(s || {})}</div>
+    <div class="mf">${id ? `<button class="btn danger" data-a="delSale" data-id="${id}" style="margin-right:auto">삭제</button>` : ''}<button class="btn" data-a="mClose">취소</button><button class="btn pri" data-a="saveSaleModal" data-id="${id || ''}">${id ? '저장' : '기록'}</button></div>`);
+}
+function pvaRows(scope, itemId) {
+  const y = S.ui.year, m = S.ui.month, items = itemId ? [S.idx.item[itemId]].filter(Boolean) : Calc.included();
+  const months = scope === 'month' ? [m] : MONTHS.map((_, i) => i + 1);
+  const P = Calc.total(months.map(mm => Calc.sumMonth(y, mm, 'plan', items))), A = Calc.total(months.map(mm => Calc.sumMonth(y, mm, 'actual', items)));
+  return { P, A, items };
+}
+function vActual() {
+  const y = S.ui.year, m = S.ui.month, b = base(), sf = S.ui.sale, pv = S.ui.pva;
+  const { P, A } = pvaRows(pv.scope, pv.item);
+  const pvaT = [['매출','revenue', money], ['비용','cost', money], ['순이익','profit', money], ['수량','qty', qfmt]].map(([l, k, f]) => ({ l, k, f, p: P[k], a: A[k], d: A[k] - P[k] }));
+  const q = sf.q.trim().toLowerCase();
+  const recs = S.sales.filter(s => s._y === y && (sf.scope === 'year' || s._m === m) && (!sf.item || s.item_id === sf.item) &&
+    (!q || [S.idx.item[s.item_id]?.name, s.memo, chName(s.channel_id)].join(' ').toLowerCase().includes(q)))
+    .sort((a, c) => String(c.sale_date).localeCompare(String(a.sale_date)) || String(c.created_at).localeCompare(String(a.created_at)));
+  const recTot = sum(recs, s => { const it = S.idx.item[s.item_id]; return it ? Calc.toBase(num(s.amount), it.currency) : 0; });
+  const ps = Calc.series(y, 'plan'), as = Calc.series(y, 'actual');
+  const per = Calc.included().map(it => {
+    const months = pv.scope === 'month' ? [m] : MONTHS.map((_, i) => i + 1);
+    const p = Calc.total(months.map(mm => Calc.monthPlan(it, y, mm))), a = Calc.total(months.map(mm => Calc.monthActual(it, y, mm)));
+    return { it, p, a, pr: Calc.toBase(p.revenue, it.currency), ar: Calc.toBase(a.revenue, it.currency), ap: Calc.toBase(a.profit, it.currency), pp: Calc.toBase(p.profit, it.currency) };
+  }).filter(r => r.pr || r.ar).sort((a, c) => c.ar - a.ar);
+  const scopeLbl = pv.scope === 'month' ? `${y}년 ${m}월` : `${y}년`;
+
+  return `<div class="canvas tabbed lift"><div class="tab">${scopeLbl} 계획 대비 실적</div>
+    <div class="hero" style="grid-template-columns:minmax(0,1fr) minmax(280px,380px)">
+      <div>
+        <div class="row" style="margin-bottom:14px">${seg('pvaScope', pv.scope, [['month', `${m}월`], ['year', `${y}년 전체`]])}
+          <select class="pillsel ${pv.item ? 'on' : ''}" data-in="pvaItem" aria-label="항목 선택"><option value="">전체 항목</option>${S.items.map(i => `<option value="${i.id}" ${pv.item === i.id ? 'selected' : ''}>${esc(i.name)}</option>`).join('')}</select></div>
+        ${table([
+          { l:'지표', lead:true, r: r => `<b>${r.l}</b>` },
+          { l:'계획', n:true, r: r => r.f(r.p) }, { l:'실적', n:true, r: r => `<b>${r.f(r.a)}</b>` },
+          { l:'차이', n:true, r: r => `<span class="${r.k === 'cost' ? cls(-r.d) : cls(r.d)}">${signed(r.d, r.f)}</span>` },
+          { l:'달성률', n:true, r: r => r.p ? `${pct(r.a / r.p * 100, 0)}<div class="bar-pct"><i style="width:${clamp(r.a / r.p * 100, 0, 100)}%;${r.k === 'cost' ? 'background:var(--ochre)' : ''}"></i></div>` : '—' },
+        ], pvaT, { cls:'pva' })}
+        <p class="note" style="margin-top:8px">실제 비용 = 매출 비율 수수료 + 판매 단위 변동비 + 지난 달까지 발생한 고정비 + 기록별 추가 비용</p>
+      </div>
+      <section class="panel">
+        <div class="phead"><h3>실제 매출 기록</h3><p>금액은 항목의 통화로 입력합니다</p></div>
+        <div id="inlineSale">${saleForm({ item_id: sf.item || pv.item || '' })}</div>
+        <div class="row" style="margin-top:14px"><span class="spacer"></span><button class="btn pri" data-a="saveSaleInline">${icon('plus')}기록</button></div>
+      </section>
+    </div>
+    <div class="panel plain" style="margin-top:22px;background:transparent;border:0;padding:0">
+      ${Charts.legend([{ name:'계획 매출', color:'#9FB1C6', outline:true }, { name:'실제 매출', color:'#4F6D5E' }, { name:'실제 순이익', color:'#B4716B', line:true }])}
+      ${chart('pvaChart', el => { const its = pv.item ? [S.idx.item[pv.item]].filter(Boolean) : undefined; const p2 = its ? Calc.series(y, 'plan', its) : ps, a2 = its ? Calc.series(y, 'actual', its) : as; return Charts.bars(el, { labels: MONTHS, series: [{ name:'계획 매출', color:'#9FB1C6', outline:true, values: p2.map(s => s.revenue) }, { name:'실제 매출', color:'#4F6D5E', values: a2.map(s => s.revenue) }], lines: [{ name:'실제 순이익', color:'#B4716B', dash:true, values: a2.map(s => s.profit) }], h: 210 }); })}
+    </div>
+  </div>
+  <div class="flow">
+    <section class="panel s5">
+      <div class="phead"><h3>항목별 계획 대비</h3><p>${scopeLbl}</p></div>
+      ${per.length ? table([
+        { l:'항목', lead:true, r: r => `<b>${esc(r.it.name)}</b>` },
+        { l:'계획 매출', n:true, r: r => money(r.pr, b, { compact:true }) },
+        { l:'실제 매출', n:true, r: r => money(r.ar, b, { compact:true }) },
+        { l:'달성률', n:true, r: r => r.pr ? pct(r.ar / r.pr * 100, 0) : '—' },
+        { l:'실제 순이익', n:true, r: r => `<span class="${cls(r.ap)}">${money(r.ap, b, { compact:true })}</span>` },
+      ], per) : `<p class="note">이 기간의 계획이나 실적이 없습니다.</p>`}
+    </section>
+    <section class="panel s7">
+      <div class="phead"><h3>기록 ${recs.length}건 <span class="faint" style="font-weight:400">합계 ${money(recTot)}</span></h3>
+        ${seg('saleScope', sf.scope, [['month', `${m}월`], ['year', `${y}년`]])}
+        <select class="pillsel ${sf.item ? 'on' : ''}" data-in="saleItemF" aria-label="항목 필터"><option value="">전체 항목</option>${S.items.map(i => `<option value="${i.id}" ${sf.item === i.id ? 'selected' : ''}>${esc(i.name)}</option>`).join('')}</select>
+        <input class="inp" data-in="saleQ" value="${esc(sf.q)}" placeholder="메모 검색" style="height:32px;width:130px;border-radius:999px">
+      </div>
+      ${recs.length ? table([
+        { l:'항목', lead:true, r: s => `<b>${esc(S.idx.item[s.item_id]?.name || '(삭제된 항목)')}</b><small>${esc(s.memo || '')}</small>` },
+        { l:'판매일', r: s => esc(s.sale_date) },
+        { l:'채널', r: s => esc(chName(s.channel_id || S.idx.item[s.item_id]?.channel_id)) },
+        { l:'수량', n:true, r: s => qfmt(num(s.quantity)) },
+        { l:'매출', n:true, r: s => money(num(s.amount), S.idx.item[s.item_id]?.currency || base()) },
+        { l:'', act:true, r: s => `<button class="btn icon sm" data-a="editSale" data-id="${s.id}" aria-label="수정">${icon('edit')}</button><button class="btn icon sm" data-a="delSale" data-id="${s.id}" aria-label="삭제">${icon('trash')}</button>` },
+      ], recs.slice(0, 300)) + (recs.length > 300 ? `<p class="note">최근 300건만 표시합니다. 항목·기간 필터로 좁혀 보세요.</p>` : '') : `<div class="empty"><b>기록이 없습니다</b><p class="muted">판매가 생기면 오른쪽 위 양식이나 + 버튼으로 기록하세요.</p></div>`}
+    </section>
+  </div>`;
+}
+
+/* =====================================================================
+   13. 분석
+   ===================================================================== */
+function vAnalytics() {
+  const a = S.ui.ana, b = base(), y = S.ui.year, m = S.ui.month;
+  const groups = groupAgg(a.group, a.basis, a.period);
+  const T = Calc.total(groups);
+  const glabel = { category:'카테고리', channel:'판매 채널', type:'사업 유형', model:'수익 모델', item:'수익 항목' }[a.group];
+  const period = a.period === 'month' ? `${y}년 ${m}월` : `${y}년`;
+  const byItem = groupAgg('item', a.basis, a.period).slice(0, 10);
+  return `<div class="canvas tabbed lift"><div class="tab">${glabel}별 ${a.basis === 'plan' ? '계획' : '실적'} <span class="faint">${period}</span></div>
+    <div class="row" style="margin-bottom:20px">
+      ${seg('anaGroup', a.group, [['category','카테고리'],['channel','채널'],['type','사업 유형'],['model','수익 모델'],['item','항목']])}
+      <span class="spacer"></span>
+      ${seg('anaBasis', a.basis, [['plan','계획'],['actual','실적']])}
+      ${seg('anaPeriod', a.period, [['year','연간'],['month', `${m}월`]])}
+    </div>
+    <div class="hero" style="grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:30px">
+      <div>
+        <p class="hero-label">${period} 총 ${a.basis === 'plan' ? '계획' : '실제'} 매출</p>
+        <p class="big" style="font-size:clamp(32px,4vw,48px)">${money(T.revenue)}</p>
+        <div class="hero-sub"><div class="hs"><span>비용</span><b>${money(T.cost, b, { compact:true })}</b></div><div class="hs"><span>순이익</span><b class="${cls(T.profit)}">${money(T.profit, b, { compact:true })}</b></div><div class="hs"><span>이익률</span><b>${pct(T.revenue ? T.profit / T.revenue * 100 : null)}</b></div></div>
+        <div style="margin-top:22px">${Charts.hbars(groups.slice(0, 10).map(g => ({ label:g.label, value:g.revenue, value2:g.profit, color:g.color })), { sub: r => `비중 ${pct(T.revenue ? r.value / T.revenue * 100 : null, 0)}` })}</div>
+      </div>
+      <div>${groups.length ? table([
+        { l:glabel, lead:true, r: g => `<b><i class="sw" style="background:${g.color};width:8px;height:8px;border-radius:50%;margin-right:6px"></i>${esc(g.label)}</b>` },
+        { l:'매출', n:true, r: g => money(g.revenue, b, { compact:true }) },
+        { l:'비용', n:true, r: g => money(g.cost, b, { compact:true }) },
+        { l:'순이익', n:true, r: g => `<span class="${cls(g.profit)}">${money(g.profit, b, { compact:true })}</span>` },
+        { l:'이익률', n:true, r: g => pct(g.margin) },
+        { l:'비중', n:true, r: g => pct(T.revenue ? g.revenue / T.revenue * 100 : null, 0) },
+      ], groups, { foot: ['합계', money(T.revenue, b, { compact:true }), money(T.cost, b, { compact:true }), `<span class="${cls(T.profit)}">${money(T.profit, b, { compact:true })}</span>`, pct(T.revenue ? T.profit / T.revenue * 100 : null), '100%'] }) : `<div class="empty"><b>데이터가 없습니다</b><p class="muted">${a.basis === 'actual' ? '이 기간에 기록된 실적이 없습니다.' : '계획된 항목이 없습니다.'}</p></div>`}</div>
+    </div>
+  </div>
+  <div class="flow">
+    <section class="panel s12">
+      <div class="phead"><h3>수익 항목 성과 비교</h3><p>${period} ${a.basis === 'plan' ? '계획' : '실적'} 상위 10개 · 매출/비용/순이익</p></div>
+      ${Charts.legend([{ name:'매출', color:'#9FB1C6' }, { name:'비용', color:'#C9C1B3' }, { name:'순이익', color:'#B99A5E' }])}
+      ${byItem.length ? chart('anaItems', el => Charts.bars(el, { labels: byItem.map(g => g.label.length > 9 ? g.label.slice(0, 9) + '…' : g.label), series: [{ name:'매출', color:'#9FB1C6', values: byItem.map(g => g.revenue) }, { name:'비용', color:'#C9C1B3', values: byItem.map(g => g.cost) }, { name:'순이익', color:'#B99A5E', values: byItem.map(g => g.profit) }], h: 250 })) : '<p class="note">표시할 항목이 없습니다.</p>'}
+    </section>
+  </div>`;
+}
+
+/* =====================================================================
+   14. 시나리오 / 가격 시뮬레이터 / 손익분기 / 목표
+   ===================================================================== */
+function scItem() {
+  const sc = S.ui.sc;
+  if (!S.idx.item[sc.item]) sc.item = (Calc.included()[0] || S.items[0])?.id || '';
+  return S.idx.item[sc.item];
+}
+function itemPicker(action = 'scItem') {
+  const it = scItem();
+  return `<select class="pillsel on" data-in="${action}" aria-label="항목 선택">${S.items.map(i => `<option value="${i.id}" ${it?.id === i.id ? 'selected' : ''}>${esc(i.name)}</option>`).join('')}</select>`;
+}
+function vScenarios() {
+  const sc = S.ui.sc;
+  if (!S.items.length) return `<div class="canvas tabbed"><div class="tab">시나리오</div><div class="empty"><b>분석할 수익 항목이 없습니다</b><div class="row"><button class="btn pri" data-a="newItem">새 수익 항목</button></div></div></div>`;
+  const tabs = seg('scTab', sc.tab, [['scenario','시나리오 비교'],['price','가격 시뮬레이터'],['be','손익분기'],['goal','목표 매출']]);
+  const body = { scenario: vScScenario, price: vScPrice, be: vScBE, goal: vScGoal }[sc.tab]();
+  return `<div class="row" style="margin-bottom:6px">${tabs}</div>${body}`;
+}
+const SCN = [['qty_min','보수적','최소 예상'],['qty_expected','현실적','예상'],['qty_max','최선','최대 예상']];
+function vScScenario() {
+  const b = base(), it = scItem();
+  const port = SCN.map(([k, l]) => { const rs = Calc.included().map(i => Calc.scenarioBase(i, k)); const r = { l, revenue: sum(rs, x => x.revenueB), cost: sum(rs, x => x.costB), profit: sum(rs, x => x.profitB), qty: sum(rs, x => x.qty) }; r.margin = r.revenue ? r.profit / r.revenue * 100 : null; return r; });
+  const one = it ? SCN.map(([k, l, d]) => ({ l, d, ...Calc.annual(it, it[k]) })) : [];
+  const cols = cur => [
+    { l:'시나리오', lead:true, r: r => `<b>${r.l}</b>${r.d ? `<small>${r.d} 수량</small>` : ''}` },
+    { l:'수량', n:true, r: r => qfmt(r.qty) },
+    { l:'매출', n:true, r: r => money(r.revenue, cur) }, { l:'비용', n:true, r: r => money(r.cost, cur) },
+    { l:'순이익', n:true, r: r => `<b class="${cls(r.profit)}">${money(r.profit, cur)}</b>` }, { l:'이익률', n:true, r: r => pct(r.margin) },
+  ];
+  const all = Calc.included().map(i => ({ i, s: SCN.map(([k]) => Calc.scenarioBase(i, k)) }));
+  return `<div class="canvas tabbed lift"><div class="tab">전체 사업 연간 시나리오</div>
+    <div class="hero" style="grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:30px">
+      <div>${table(cols(b), port)}<p class="note" style="margin-top:8px">‘아이디어’를 제외한 모든 항목의 최소·예상·최대 수량을 1년 기준으로 합산합니다.</p></div>
+      <div>${Charts.legend([{ name:'매출', color:'#9FB1C6' }, { name:'비용', color:'#C9C1B3' }, { name:'순이익', color:'#B99A5E' }])}
+      ${chart('scPort', el => Charts.bars(el, { labels: port.map(p => p.l), series: [{ name:'매출', color:'#9FB1C6', values: port.map(p => p.revenue) }, { name:'비용', color:'#C9C1B3', values: port.map(p => p.cost) }, { name:'순이익', color:'#B99A5E', values: port.map(p => p.profit) }], h: 220 }))}</div>
+    </div></div>
+  <div class="flow">
+    <section class="panel s6"><div class="phead"><h3>항목별 시나리오</h3>${itemPicker()}<p>${it ? `${money(num(it.price), it.currency)} × 수량${Calc.mult(it) === 12 ? ' × 12개월' : ''} · 항목 통화 기준` : ''}</p></div>
+      ${it ? table(cols(it.currency), one) : ''}</section>
+    <section class="panel s6"><div class="phead"><h3>모든 항목 순이익 비교</h3><p>보수적 / 현실적 / 최선 · 기본 통화</p></div>
+      ${table([{ l:'항목', lead:true, r: r => `<b>${esc(r.i.name)}</b>` }, ...SCN.map(([, l], j) => ({ l, n:true, r: r => `<span class="${cls(r.s[j].profitB)}">${money(r.s[j].profitB, b, { compact:true })}</span>` }))], all)}</section>
+  </div>`;
+}
+function simPrices(it) {
+  const sc = S.ui.sc;
+  if (!sc.prices || sc.pricesFor !== it.id) {
+    const p = num(it.price), r = v => { const st = p >= 10000 ? 1000 : p >= 1000 ? 100 : p >= 100 ? 10 : 1; return Math.max(0, Math.round(v / st) * st); };
+    sc.prices = p ? [...new Set([r(p * .6), r(p * .8), p, r(p * 1.25), r(p * 1.6)])] : [1000, 5000, 10000]; sc.pricesFor = it.id;
+  }
+  return sc.prices;
+}
+function vScPrice() {
+  const sc = S.ui.sc, it = scItem(); if (!it) return '';
+  const cur = it.currency, P0 = num(it.price), Q0 = num(it[sc.basisQty]), e = num(sc.elasticity);
+  const rows = simPrices(it).slice().sort((a, c) => a - c).map(p => {
+    const qty = P0 > 0 && e ? Math.max(0, Q0 * (1 + e / 100 * ((p - P0) / P0 * 100))) : Q0;
+    return { p, cur: p === P0, ...Calc.annual(it, qty, p) };
+  });
+  const best = rows.reduce((a, r) => r.profit > a.profit ? r : a, rows[0] || { profit: 0 });
+  return `<div class="canvas tabbed lift"><div class="tab">가격 시뮬레이터 <span class="faint">${esc(it.name)}</span></div>
+    <div class="row" style="margin-bottom:16px">${itemPicker()}
+      <select class="pillsel" data-in="simBasis" aria-label="수량 기준">${[['qty_min','최소 수량'],['qty_expected','예상 수량'],['qty_target','목표 수량'],['qty_max','최대 수량']].map(([k, l]) => `<option value="${k}" ${sc.basisQty === k ? 'selected' : ''}>${l} 기준 (${qfmt(num(it[k]))})</option>`).join('')}</select>
+      <label class="row" style="gap:6px"><span class="note">가격 1% 오를 때 수요 변화</span><input class="inp n" data-in="simE" value="${esc(sc.elasticity)}" inputmode="decimal" style="width:74px;height:32px;border-radius:999px"><span class="note">%</span></label>
+    </div>
+    <div class="row" style="margin-bottom:18px">${rows.map(r => `<span class="chip" style="height:30px;padding:0 6px 0 12px;${r.cur ? 'background:var(--moss-s)' : ''}">${money(r.p, cur)}<button class="btn icon sm" style="height:22px;width:22px;border:0;background:none" data-a="simDel" data-v="${r.p}" aria-label="가격 삭제">${icon('x')}</button></span>`).join('')}
+      <input class="inp n" id="simNew" placeholder="가격 추가" inputmode="decimal" style="width:120px;height:32px;border-radius:999px"><button class="btn sm" data-a="simAdd">추가</button><button class="link" data-a="simReset">기본값</button></div>
+    ${table([
+      { l:'가격', lead:true, r: r => `<b>${money(r.p, cur)}</b><small>${r.cur ? '현재 가격' : P0 ? signed((r.p - P0) / P0 * 100, v => pct(v, 0)) : ''}${r === best ? ' · 순이익 최대' : ''}</small>` },
+      { l:'수량', n:true, r: r => qfmt(r.qty) },
+      { l:'예상 매출', n:true, r: r => money(r.revenue, cur) }, { l:'예상 비용', n:true, r: r => money(r.cost, cur) },
+      { l:'예상 순이익', n:true, r: r => `<b class="${cls(r.profit)}">${money(r.profit, cur)}</b>` }, { l:'순이익률', n:true, r: r => pct(r.margin) },
+    ], rows, { rowAttr: r => r === best ? 'class="sel"' : '' })}
+    <div style="margin-top:20px">${Charts.legend([{ name:'예상 매출', color:'#9FB1C6' }, { name:'예상 순이익', color:'#B99A5E' }])}
+    ${chart('simChart', el => Charts.bars(el, { labels: rows.map(r => money(r.p, cur, { compact:true })), series: [{ name:'예상 매출', color:'#9FB1C6', values: rows.map(r => r.revenue) }, { name:'예상 순이익', color:'#B99A5E', values: rows.map(r => r.profit) }], fmt: v => money(v, cur, { compact:true }), full: v => money(v, cur), h: 210 }))}</div>
+    <p class="note" style="margin-top:8px">수요 변화를 0으로 두면 모든 가격에서 같은 수량을 가정합니다. 예: −1.5 입력 시 가격 10% 인상 → 수량 15% 감소.</p>
+  </div>`;
+}
+function vScBE() {
+  const b = base(), it = scItem();
+  const rows = S.items.map(i => ({ i, be: Calc.breakEven(i), exp: num(i.qty_expected) }));
+  const one = it ? Calc.breakEven(it) : null, unit = it ? modelOf(it.revenue_model).unit + (Calc.mult(it) === 12 ? '(월 구독자)' : '') : '';
+  const cur = it?.currency;
+  const pctBE = one && one.beQty != null && num(it.qty_expected) ? num(it.qty_expected) / one.beQty * 100 : null;
+  return `<div class="canvas tabbed lift"><div class="tab">손익분기 <span class="faint">${esc(it?.name || '')}</span></div>
+    <div class="row" style="margin-bottom:16px">${itemPicker()}</div>
+    ${one ? `<div class="hero" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:30px">
+      <div>
+        <p class="hero-label">연간 손익분기 수량</p>
+        <p class="big">${one.beQty == null ? '도달 불가' : `${qfmt(Math.ceil(one.beQty * 10) / 10)}<small>${unit}</small>`}</p>
+        <div class="hero-sub">
+          <div class="hs"><span>손익분기 매출</span><b>${one.beRevenue == null ? '—' : money(one.beRevenue, cur)}</b></div>
+          <div class="hs"><span>월 손익분기 수량</span><b>${one.beMonthly == null ? '—' : qfmt(Math.ceil(one.beMonthly * 10) / 10)}</b></div>
+          <div class="hs"><span>예상 수량</span><b>${qfmt(num(it.qty_expected))}</b></div>
+        </div>
+        ${one.beQty == null ? `<p class="note neg" style="margin-top:12px">판매 1단위의 변동비가 가격 이상이라 팔수록 손실입니다. 가격을 올리거나 변동비를 줄이세요.</p>` : `
+        <div style="margin-top:20px"><div class="row" style="justify-content:space-between;font-size:12px"><span class="muted">예상 수량 / 손익분기 수량</span><b>${pct(pctBE, 0)}</b></div>
+        <div class="progress" style="margin-top:6px"><i class="a" style="width:${clamp(pctBE || 0, 0, 100)}%;${(pctBE || 0) < 100 ? 'background:var(--rose)' : ''}"></i></div>
+        <p class="note" style="margin-top:6px">${(pctBE || 0) >= 100 ? '예상 수량으로 손익분기를 넘습니다.' : `손익분기까지 ${qfmt(Math.ceil((one.beQty - num(it.qty_expected)) * 10) / 10)}${modelOf(it.revenue_model).unit} 더 필요합니다.`}</p></div>`}
+      </div>
+      <div>${table([{ l:'구성', lead:true, r: r => `<b>${r[0]}</b><small>${r[2] || ''}</small>` }, { l:'값', n:true, r: r => r[1] }], [
+        ['판매 가격', money(one.price, cur), Calc.mult(it) === 12 ? '월 구독료' : '1단위'],
+        ['단위 변동비', money(one.vUnit, cur), '단위 비용 + 매출 비율 수수료'],
+        ['공헌이익', `<b class="${cls(one.cm)}">${money(one.cm, cur)}</b>`, '가격 − 단위 변동비'],
+        ['공헌이익률', pct(one.cmRatio), ''],
+        ['연간 고정비', money(one.fixedA, cur), `월 ${money(one.fixedM, cur)} × 12 + 1회 ${money(one.once, cur)}`],
+      ])}</div></div>` : ''}
+  </div>
+  <div class="flow"><section class="panel s12"><div class="phead"><h3>전체 항목 손익분기</h3><p>연간 기준 · 항목 통화</p></div>
+    ${table([
+      { l:'항목', lead:true, r: r => `<b>${esc(r.i.name)}</b><small>${modelOf(r.i.revenue_model).ko}</small>` },
+      { l:'고정비(연)', n:true, r: r => money(r.be.fixedA, r.i.currency, { compact:true }) },
+      { l:'단위 변동비', n:true, r: r => money(r.be.vUnit, r.i.currency) },
+      { l:'공헌이익', n:true, r: r => `<span class="${cls(r.be.cm)}">${money(r.be.cm, r.i.currency)}</span>` },
+      { l:'손익분기 수량', n:true, r: r => r.be.beQty == null ? '<span class="neg">도달 불가</span>' : qfmt(Math.ceil(r.be.beQty * 10) / 10) },
+      { l:'손익분기 매출', n:true, r: r => r.be.beRevenue == null ? '—' : money(r.be.beRevenue, r.i.currency, { compact:true }) },
+      { l:'예상 수량', n:true, r: r => `<span class="${r.be.beQty != null && r.exp >= r.be.beQty ? 'pos' : 'neg'}">${qfmt(r.exp)}</span>` },
+    ], rows, { rowAttr: r => `class="click ${r.i.id === it?.id ? 'sel' : ''}" data-a="pickSc" data-id="${r.i.id}"` })}</section></div>`;
+}
+function vScGoal() {
+  const b = base(), y = S.ui.year, tA = num(S.settings.annual_target), tM = monthlyTarget();
+  const yp = Calc.total(Calc.series(y, 'plan')), ya = Calc.total(Calc.series(y, 'actual'));
+  const inc = Calc.included().filter(i => num(i.price) > 0);
+  const planRev = inc.map(it => ({ it, rb: Calc.toBase(Calc.itemYear(it, y, 'plan').revenue, it.currency) }));
+  const tot = sum(planRev, r => r.rb), gap = Math.max(0, tA - yp.revenue);
+  const rows = planRev.map(r => {
+    const share = tot ? r.rb / tot : 1 / (planRev.length || 1);
+    const unitB = Calc.toBase(num(r.it.price), r.it.currency) * Calc.mult(r.it);
+    const need = tA && unitB ? Math.ceil(tA * share / unitB * 10) / 10 : null;
+    const alone = gap && unitB ? Math.ceil(gap / unitB) : 0;
+    return { ...r, share, need, alone, exp: num(r.it.qty_expected) };
+  });
+  const ms = Calc.series(y, 'plan'), ma = Calc.series(y, 'actual');
+  return `<div class="canvas tabbed lift"><div class="tab">${y}년 목표 매출</div>
+    <div class="hero" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:30px">
+      <div>
+        <div class="fgrid">
+          <label class="field"><span>연간 목표 매출 (${b})</span><input class="inp n" data-in="goalA" inputmode="decimal" value="${tA || ''}" placeholder="예: 50000000"></label>
+          <label class="field"><span>월간 목표 매출 (${b})</span><input class="inp n" data-in="goalM" inputmode="decimal" value="${num(S.settings.monthly_target) || ''}" placeholder="비우면 연간 ÷ 12"></label>
+        </div>
+        <div class="row" style="margin-top:10px"><button class="btn pri sm" data-a="saveGoal">목표 저장</button><span class="note">입력 후 저장하면 개요의 달성률도 함께 바뀝니다.</span></div>
+        <div style="margin-top:26px">
+          <p class="hero-label">목표 대비 계획 매출</p>
+          <p class="big" style="font-size:clamp(34px,4vw,52px)">${tA ? pct(yp.revenue / tA * 100, 0) : '—'}</p>
+          <div class="progress" style="margin-top:12px;height:14px"><i class="p" style="width:${tA ? clamp(yp.revenue / tA * 100, 0, 100) : 0}%"></i><i class="a" style="width:${tA ? clamp(ya.revenue / tA * 100, 0, 100) : 0}%"></i></div>
+          <div class="hero-sub"><div class="hs"><span>연간 목표</span><b>${money(tA)}</b></div><div class="hs"><span>계획 매출</span><b>${money(yp.revenue)}</b></div><div class="hs"><span>실적 누계</span><b>${money(ya.revenue)}</b></div><div class="hs"><span>부족분(계획 기준)</span><b class="${gap ? 'neg' : 'pos'}">${money(gap)}</b></div></div>
+        </div>
+      </div>
+      <div>${Charts.legend([{ name:'계획 매출', color:'#9FB1C6', outline:true }, { name:'실제 매출', color:'#4F6D5E' }, { name:'월 목표', color:'#B99A5E', line:true }])}
+        ${chart('goalChart', el => Charts.bars(el, { labels: MONTHS, series: [{ name:'계획 매출', color:'#9FB1C6', outline:true, values: ms.map(s => s.revenue) }, { name:'실제 매출', color:'#4F6D5E', values: ma.map(s => s.revenue) }], lines: tM ? [{ name:'월 목표', color:'#B99A5E', dash:true, values: MONTHS.map(() => tM) }] : [], h: 240 }))}</div>
+    </div></div>
+  <div class="flow"><section class="panel s12"><div class="phead"><h3>목표 달성에 필요한 판매량</h3><p>연간 목표를 현재 계획 매출 비중대로 나눴을 때 각 항목의 필요 수량 · ‘단독으로 채우기’는 부족분을 그 항목 하나로만 채울 때 추가로 필요한 수량</p></div>
+    ${!tA ? `<p class="note">연간 목표 매출을 입력하면 계산됩니다.</p>` : rows.length ? table([
+      { l:'항목', lead:true, r: r => `<b>${esc(r.it.name)}</b><small>${money(num(r.it.price), r.it.currency)}${Calc.mult(r.it) === 12 ? ' /월' : ''}</small>` },
+      { l:'매출 비중', n:true, r: r => pct(r.share * 100, 0) },
+      { l:'예상 수량', n:true, r: r => qfmt(r.exp) },
+      { l:'필요 수량', n:true, r: r => `<b>${qfmt(r.need)}</b> <small class="faint">${modelOf(r.it.revenue_model).unit}</small>` },
+      { l:'차이', n:true, r: r => r.need == null ? '—' : `<span class="${r.exp >= r.need ? 'pos' : 'neg'}">${signed(r.exp - r.need, qfmt)}</span>` },
+      { l:'단독으로 채우기', n:true, r: r => gap ? `+${qfmt(r.alone)}` : '달성' },
+    ], rows) : `<p class="note">가격이 입력된 수익 항목이 없습니다.</p>`}</section></div>`;
+}
+
+/* =====================================================================
+   15. 설정
+   ===================================================================== */
+function vSettings() {
+  const st = S.settings, c = Conn.get();
+  const taxBox = t => `<section class="panel s4"><div class="phead"><h3>${TAX[t].ko}</h3><span class="faint">${S[t].length}개</span></div>
+    <div class="row" style="margin-bottom:10px"><input class="inp" id="new-${t}" placeholder="새 ${TAX[t].ko} 이름" style="flex:1;min-width:0"><button class="btn sm" data-a="taxAdd" data-t="${t}">추가</button></div>
+    <ul class="hl">${sortedTax(t).map(x => { const n = S.items.filter(i => i[{ business_types:'business_type_id', categories:'category_id', channels:'channel_id' }[t]] === x.id).length;
+      return `<li style="grid-template-columns:auto minmax(0,1fr) auto;align-items:center"><input type="color" value="${esc(x.color || colorOf(S[t], x.id))}" data-in="taxColor" data-t="${t}" data-id="${x.id}" aria-label="색상" style="width:22px;height:22px;border:0;padding:0;background:none;cursor:pointer"><span class="nm" style="cursor:default">${esc(x.name)} <span class="faint" style="font-weight:400">${n ? n + '개 항목' : ''}</span></span>
+      <span><button class="btn icon sm" data-a="taxRen" data-t="${t}" data-id="${x.id}" aria-label="이름 변경">${icon('edit')}</button><button class="btn icon sm" data-a="taxDel" data-t="${t}" data-id="${x.id}" aria-label="삭제">${icon('trash')}</button></span></li>`; }).join('')}</ul></section>`;
+  return `<div class="canvas tabbed lift"><div class="tab">목표와 통화</div>
+    <div class="hero" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:34px">
+      <div>
+        <h3 style="margin:0 0 12px;font-size:13.5px">목표 매출</h3>
+        <div class="fgrid">
+          <label class="field"><span>연간 목표 (${base()})</span><input class="inp n" data-in="goalA" inputmode="decimal" value="${num(st.annual_target) || ''}"></label>
+          <label class="field"><span>월간 목표 (${base()})</span><input class="inp n" data-in="goalM" inputmode="decimal" value="${num(st.monthly_target) || ''}" placeholder="비우면 연간 ÷ 12"></label>
+        </div>
+        <div class="row" style="margin-top:10px"><button class="btn pri sm" data-a="saveGoal">목표 저장</button></div>
+      </div>
+      <div>
+        <h3 style="margin:0 0 12px;font-size:13.5px">통화와 환율</h3>
+        <div class="fgrid">
+          <label class="field full"><span>기본 통화 — 합계와 분석이 이 통화로 환산됩니다</span><select class="sel" id="baseCur">${Object.keys(CUR).map(k => `<option ${base() === k ? 'selected' : ''}>${k}</option>`).join('')}</select></label>
+          ${['USD','EUR','JPY'].map(k => `<label class="field"><span>1 ${k} = 원(KRW)</span><input class="inp n" id="fx-${k}" inputmode="decimal" value="${num(st.fx_rates?.[k])}"></label>`).join('')}
+        </div>
+        <div class="row" style="margin-top:10px"><button class="btn pri sm" data-a="saveFx">통화 설정 저장</button><span class="note">환율은 자동으로 바뀌지 않습니다.</span></div>
+      </div>
+    </div></div>
+  <div class="flow">${taxBox('business_types')}${taxBox('categories')}${taxBox('channels')}
+    <section class="panel s6"><div class="phead"><h3>데이터 저장소</h3><p>${S.store?.mode === 'demo' ? '데모 모드: 이 브라우저에만 저장됩니다.' : c?.src === 'config' ? 'config.js 의 연결 정보를 사용 중입니다.' : '이 기기에 저장된 연결 정보를 사용 중입니다.'}</p></div>
+      <div class="row"><button class="btn" data-a="openConn">연결 설정</button><button class="btn" data-a="retry">다시 불러오기</button>${c?.src === 'device' ? `<button class="btn danger" data-a="disconnect">이 기기 연결 해제</button>` : ''}</div>
+      <p class="note" style="margin-top:12px">${S.items.length}개 항목 · 비용 ${S.costs.length} · 월별 계획 ${S.plans.length} · 실적 ${S.sales.length}건</p></section>
+    <section class="panel s6"><div class="phead"><h3>데이터 관리</h3><p>백업은 JSON 파일로 저장됩니다.</p></div>
+      <div class="row"><button class="btn" data-a="exportJson">JSON 백업 내려받기</button><button class="btn" data-a="exportCsv">실적 CSV 내려받기</button><button class="btn soft" data-a="seedSample">샘플 데이터 추가</button></div></section>
+  </div>`;
+}
+</script>
+<script>
+/* =====================================================================
+   16. 수익 항목 편집 드로어
+   ===================================================================== */
+const D = { draft: null, tab: 'basic', dirty: false };
+function newDraft() {
+  return { id: uid(), name:'', business_type_id:'', category_id:'', channel_id:'', revenue_model:'per_item', status:'planning', launch_date:'', description:'', notes:'',
+    price:0, currency: base(), qty_min:0, qty_expected:0, qty_target:0, qty_max:0,
+    costs: [{ id: uid(), cost_type:'platform', label:'', mode:'percent', basis:'unit', recurrence:'monthly', value:0 }] };
+}
+function openItem(id) {
+  const it = id && S.idx.item[id];
+  D.draft = it ? { ...it, launch_date: it.launch_date || '', costs: (S.idx.costs[id] || []).map(c => ({ ...c })) } : newDraft();
+  D.isNew = !it; D.tab = 'basic'; D.dirty = false;
+  $('#drawer').classList.add('on'); $('#scrim').classList.add('on');
+  renderDrawer();
+  setTimeout(() => { const f = $('#drawer [name="name"]'); if (D.isNew && f) f.focus(); }, 280);
+}
+async function closeDrawer(force) {
+  if (!force && D.dirty && !(await confirmDlg('저장하지 않은 변경 사항', '편집 중인 내용이 저장되지 않았습니다. 닫을까요?', '닫기', true))) return;
+  $('#drawer').classList.remove('on'); $('#scrim').classList.remove('on'); D.draft = null;
+}
+function drawerSummary() {
+  const d = D.draft, a = Calc.annual(d, d.qty_expected, num(d.price), d.costs), cur = d.currency;
+  const conv = cur !== base() ? `<span class="faint" style="font-size:11px;display:block">${money(Calc.toBase(a.profit, cur), base(), { compact:true })}</span>` : '';
+  return `<div><span>예상 매출(연)</span><b>${money(a.revenue, cur, { compact:true })}</b></div><div><span>총비용</span><b>${money(a.cost, cur, { compact:true })}</b></div>
+    <div><span>예상 순이익</span><b class="${cls(a.profit)}">${money(a.profit, cur, { compact:true })}</b>${conv}</div><div><span>이익률</span><b>${pct(a.margin)}</b></div>`;
+}
+function taxSelect(t, field, val) {
+  return `<select class="sel" name="${field}" data-in="dTax" data-t="${t}">${opts(sortedTax(t), val, '선택 안 함')}<option value="__new">+ 새 ${TAX[t].ko} 추가</option></select>`;
+}
+function drawerBody() {
+  const d = D.draft, md = modelOf(d.revenue_model), unit = md.unit;
+  if (D.tab === 'basic') return `<div class="fgrid">
+    <label class="field full"><span>이름</span><input class="inp" name="name" value="${esc(d.name)}" placeholder="예: 이미지 이펙트 서비스" required></label>
+    <label class="field"><span>사업 유형</span>${taxSelect('business_types', 'business_type_id', d.business_type_id)}</label>
+    <label class="field"><span>카테고리</span>${taxSelect('categories', 'category_id', d.category_id)}</label>
+    <label class="field"><span>수익 모델</span><select class="sel" name="revenue_model" data-rerender="1">${MODELS.map(m => `<option value="${m.id}" ${d.revenue_model === m.id ? 'selected' : ''}>${m.ko} · ${m.en}</option>`).join('')}</select></label>
+    <label class="field"><span>판매 채널</span>${taxSelect('channels', 'channel_id', d.channel_id)}</label>
+    <label class="field"><span>상태</span><select class="sel" name="status">${opts(STATUSES, d.status)}</select></label>
+    <label class="field"><span>출시일</span><input class="inp" type="date" name="launch_date" value="${esc(d.launch_date || '')}"><em>출시 전 달은 자동 분배와 고정비에서 빠집니다</em></label>
+    <label class="field full"><span>설명</span><textarea class="ta" name="description" placeholder="무엇을 누구에게 파는지">${esc(d.description || '')}</textarea></label>
+    <label class="field full"><span>메모</span><textarea class="ta" name="notes">${esc(d.notes || '')}</textarea></label>
+  </div>`;
+  if (D.tab === 'price') {
+    const q = (k, l, hint) => `<label class="field"><span>${l} <em class="faint">${unit}${md.monthly ? '(평균 구독자)' : ''}</em></span><input class="inp n" name="${k}" inputmode="decimal" value="${num(d[k]) || ''}" placeholder="0"><em>${hint}</em></label>`;
+    const act = S.idx.sales[d.id] ? sum(S.idx.sales[d.id].filter(s => s._y === S.ui.year), s => num(s.quantity)) : 0;
+    return `<div class="sec"><h4>가격</h4><div class="fgrid">
+      <label class="field"><span>판매 가격${md.monthly ? ' (월 구독료)' : ''}</span><input class="inp n" name="price" inputmode="decimal" value="${num(d.price) || ''}" placeholder="0"></label>
+      <label class="field"><span>통화</span><select class="sel" name="currency" data-rerender="1">${Object.keys(CUR).map(k => `<option ${d.currency === k ? 'selected' : ''}>${k}</option>`).join('')}</select>${d.currency !== base() ? `<em>1 ${d.currency} = ${Calc.rate(d.currency).toLocaleString('ko-KR')}원으로 환산 (설정에서 변경)</em>` : ''}</label>
+    </div></div>
+    <div class="sec"><h4>판매 계획 수량 <span class="faint" style="font-weight:400">1년 기준</span></h4><div class="fgrid">
+      ${q('qty_min', '최소 수량', '보수적 시나리오')}${q('qty_expected', '예상 수량', '현실적 시나리오 · 기본 계산 기준')}
+      ${q('qty_target', '목표 수량', '도전 목표')}${q('qty_max', '최대 수량', '최선 시나리오')}
+      <div class="field full"><span>실제 수량 (${S.ui.year}년)</span><div class="inp n" style="display:flex;align-items:center;justify-content:flex-end;background:var(--well)">${qfmt(act)} ${unit}</div><em>실제 매출 화면의 기록이 자동 합산됩니다</em></div>
+    </div></div>
+    <p class="note">${md.monthly ? `구독: ${money(num(d.price), d.currency)} × ${qfmt(num(d.qty_expected))}명 = ${money(num(d.price) * num(d.qty_expected), d.currency)} / 월 · 연 ${money(num(d.price) * num(d.qty_expected) * 12, d.currency)}` : `${money(num(d.price), d.currency)} × ${qfmt(num(d.qty_expected))}${unit} = ${money(num(d.price) * num(d.qty_expected), d.currency)}`}</p>`;
+  }
+  if (D.tab === 'cost') {
+    const p = Calc.parts(d, d.costs);
+    return `<div class="sec"><h4>비용 <span class="faint" style="font-weight:400">${d.currency} 기준 · 금액 또는 매출 대비 %</span></h4>
+      ${d.costs.map((c, i) => `<div class="crow" data-ci="${i}">
+        <select class="sel" data-in="cost" data-k="cost_type" aria-label="비용 종류">${COST_TYPES.map(t => `<option value="${t.id}" ${c.cost_type === t.id ? 'selected' : ''}>${t.ko}</option>`).join('')}</select>
+        <input class="inp" data-in="cost" data-k="label" value="${esc(c.label || '')}" placeholder="설명(선택)" aria-label="비용 설명">
+        <select class="sel" data-in="cost" data-k="mode" aria-label="방식"><option value="amount" ${c.mode === 'amount' ? 'selected' : ''}>금액</option><option value="percent" ${c.mode === 'percent' ? 'selected' : ''}>비율 %</option></select>
+        ${c.mode === 'percent' ? `<span class="note" style="padding-left:4px">매출 대비</span>` : `<select class="sel" data-in="cost" data-k="bk" aria-label="발생 기준"><option value="unit" ${c.basis === 'unit' ? 'selected' : ''}>${md.monthly ? '구독자·월당' : '판매 1단위당'}</option><option value="monthly" ${c.basis === 'fixed' && c.recurrence !== 'once' ? 'selected' : ''}>매월 고정</option><option value="once" ${c.basis === 'fixed' && c.recurrence === 'once' ? 'selected' : ''}>1회 고정</option></select>`}
+        <input class="inp n" data-in="cost" data-k="value" inputmode="decimal" value="${num(c.value) || ''}" placeholder="${c.mode === 'percent' ? '%' : '0'}" aria-label="값">
+        <button class="btn icon sm del" data-a="costDel" data-v="${i}" aria-label="비용 삭제">${icon('trash')}</button>
+      </div>`).join('') || '<p class="note">등록된 비용이 없습니다.</p>'}
+      <div class="qadd">${COST_TYPES.map(t => `<button class="btn sm soft" data-a="costAdd" data-v="${t.id}">+ ${t.ko}</button>`).join('')}</div></div>
+      <div class="sec">${table([{ l:'구분', lead:true, r: r => `<b>${r[0]}</b><small>${r[2]}</small>` }, { l:'값', n:true, r: r => r[1] }], [
+        ['매출 비율 비용', pct(p.pct), '플랫폼·결제 수수료 등'],
+        ['단위당 변동비', money(p.unit, d.currency), md.monthly ? '구독자 1명·1개월당' : '판매 1단위당'],
+        ['매월 고정비', money(p.monthly, d.currency), '출시 이후 매월'],
+        ['1회 고정비', money(p.once, d.currency), '출시월(없으면 등록월)에 반영'],
+      ])}</div>`;
+  }
+  // 분석 탭
+  const be = Calc.breakEven(d, num(d.price), d.costs), cur = d.currency;
+  const rows = SCN.map(([k, l]) => ({ l, ...Calc.annual(d, d[k], num(d.price), d.costs) }));
+  return `<div class="sec"><h4>시나리오 (연간)</h4>${table([
+    { l:'시나리오', lead:true, r: r => `<b>${r.l}</b>` }, { l:'수량', n:true, r: r => qfmt(r.qty) }, { l:'매출', n:true, r: r => money(r.revenue, cur) },
+    { l:'비용', n:true, r: r => money(r.cost, cur) }, { l:'순이익', n:true, r: r => `<b class="${cls(r.profit)}">${money(r.profit, cur)}</b>` }, { l:'이익률', n:true, r: r => pct(r.margin) }], rows)}</div>
+    <div class="sec"><h4>손익분기</h4>${table([{ l:'지표', lead:true, r: r => `<b>${r[0]}</b>` }, { l:'값', n:true, r: r => r[1] }], [
+      ['공헌이익 (가격 − 단위 변동비)', `<span class="${cls(be.cm)}">${money(be.cm, cur)}</span> · ${pct(be.cmRatio)}`],
+      ['연간 고정비', money(be.fixedA, cur)],
+      ['손익분기 수량 (연)', be.beQty == null ? '<span class="neg">도달 불가</span>' : `${qfmt(Math.ceil(be.beQty * 10) / 10)} ${modelOf(d.revenue_model).unit}`],
+      ['손익분기 매출 (연)', be.beRevenue == null ? '—' : money(be.beRevenue, cur)],
+    ])}</div>
+    ${D.isNew ? '' : `<button class="link" data-a="goSim">가격 시뮬레이터에서 가격별로 비교하기</button>`}`;
+}
+function renderDrawer() {
+  const d = D.draft; if (!d) return;
+  $('#drawer').innerHTML = `
+    <div class="dhead"><h2>${D.isNew ? '새 수익 항목' : esc(d.name || '이름 없음')}</h2>${D.isNew ? '' : statusChip(d.status)}<button class="btn icon" data-a="closeDrawer" aria-label="닫기">${icon('x')}</button></div>
+    <div class="dsum" id="dsum">${drawerSummary()}</div>
+    <div class="dtabs">${seg('dTab', D.tab, [['basic','기본 정보'],['price','가격·수량'],['cost', `비용 ${d.costs.length}`],['analysis','시나리오·손익분기']])}</div>
+    <div class="dbody" id="dbody">${drawerBody()}</div>
+    <div class="dfoot">${D.isNew ? '' : `<button class="btn icon" data-a="delItemD" aria-label="삭제" title="삭제">${icon('trash')}</button><button class="btn icon" data-a="dupItemD" aria-label="복제" title="복제">${icon('copy')}</button><button class="btn sm soft" data-a="saleFromItem">실적 기록</button>`}
+      <span class="spacer"></span><button class="btn" data-a="closeDrawer">취소</button><button class="btn pri" data-a="saveItem">${D.isNew ? '추가' : '저장'}</button></div>`;
+}
+function drawerInput(el) {
+  const d = D.draft; if (!d) return;
+  D.dirty = true;
+  if (el.dataset.in === 'cost') {
+    const i = +el.closest('[data-ci]').dataset.ci, c = d.costs[i], k = el.dataset.k;
+    if (k === 'bk') { if (el.value === 'unit') c.basis = 'unit'; else { c.basis = 'fixed'; c.recurrence = el.value; } }
+    else if (k === 'cost_type') { c.cost_type = el.value; const t = COST[el.value]; if (!num(c.value)) { c.mode = t.mode; c.basis = t.basis || 'unit'; c.recurrence = t.rec || 'monthly'; } }
+    else c[k] = el.value;
+    if (['mode','cost_type','bk'].includes(k)) { const body = $('#dbody'), st = body.scrollTop; body.innerHTML = drawerBody(); body.scrollTop = st; }
+  } else if (el.name) {
+    d[el.name] = el.value;
+    if (el.dataset.rerender) { const body = $('#dbody'), st = body.scrollTop; body.innerHTML = drawerBody(); body.scrollTop = st; }
+  }
+  $('#dsum').innerHTML = drawerSummary();
+}
+
+/* =====================================================================
+   17. 연결 설정 모달
+   ===================================================================== */
+function openConnModal(first) {
+  const c = Conn.get();
+  Modal.open(`<div class="mh"><h2>${first ? '매출 플래너 시작하기' : 'Supabase 연결'}</h2></div>
+    <div class="mb"><p class="muted" style="margin:0 0 14px;line-height:1.6">Supabase 프로젝트의 <b>Project URL</b>과 <b>anon public key</b>를 입력하세요. (Supabase → Project Settings → API)${c?.src === 'config' ? '<br>현재 config.js 값이 우선 적용됩니다.' : ''}</p>
+    <div class="fgrid"><label class="field full"><span>Project URL</span><input class="inp" id="cUrl" value="${esc(c?.url || '')}" placeholder="https://xxxx.supabase.co" autocomplete="off"></label>
+    <label class="field full"><span>anon public key</span><input class="inp" id="cKey" value="${esc(c?.key || '')}" placeholder="eyJhbGciOi…" autocomplete="off"></label></div>
+    <p class="note" style="margin-top:10px">연결 정보는 이 기기의 브라우저에만 저장됩니다. 먼저 schema.sql을 SQL Editor에서 실행해야 합니다.</p><div class="err" id="cErr"></div></div>
+    <div class="mf"><button class="btn" data-a="startDemo" style="margin-right:auto">${S.store?.mode === 'demo' ? '데모 계속 사용' : '데모 모드로 둘러보기'}</button>${first ? '' : '<button class="btn" data-a="mClose">취소</button>'}<button class="btn pri" data-a="saveConn">연결 테스트 후 저장</button></div>`);
+}
+async function saveConn() {
+  const url = $('#cUrl').value.trim(), key = $('#cKey').value.trim(), err = $('#cErr');
+  if (!/^https?:\/\/.+/.test(url) || key.length < 20) { err.textContent = 'URL과 키를 정확히 입력하세요.'; return; }
+  err.textContent = '연결을 확인하는 중…';
+  try { const st = new RemoteStore(url, key); await st.ping(); Conn.set(url, key); S.store = st; Modal.close(); toast('Supabase에 연결했습니다'); await loadAll(); }
+  catch (e) { err.textContent = e.message; }
+}
+
+/* =====================================================================
+   18. 샘플 데이터 / 내보내기
+   ===================================================================== */
+async function seedSample() {
+  if (!(await confirmDlg('샘플 데이터 추가', '예시 수익 항목 6개와 비용, 월별 계획, 실적 기록을 추가합니다. 기존 데이터는 유지됩니다.', '추가'))) return;
+  const y = NOW.getFullYear(), curM = NOW.getMonth() + 1;
+  const T = n => S.business_types.find(x => x.name === n)?.id || null, C = n => S.categories.find(x => x.name === n)?.id || null, H = n => S.channels.find(x => x.name === n)?.id || null;
+  const d2 = (m, d = 1) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const defs = [
+    { name:'이미지 이펙트 서비스', t:'Image / Video Effect', c:'디지털 서비스', ch:'크몽', model:'per_item', status:'active', price:5000, cur:'KRW', q:[60,100,150,220], launch:d2(3), plan:[0,0,6,7,8,8,9,10,10,12,14,16],
+      costs:[['platform','',  'percent','unit','monthly',20],['payment','','percent','unit','monthly',3.3],['advertising','검색 광고','amount','fixed','monthly',30000]] },
+    { name:'맞춤 기도문 서비스', t:'Prayer / Writing Service', c:'콘텐츠', ch:'Website', model:'per_item', status:'active', price:10000, cur:'KRW', q:[30,50,80,120], launch:d2(1, 15),
+      costs:[['payment','','percent','unit','monthly',3.3],['fixed','호스팅','amount','fixed','monthly',10000]] },
+    { name:'웹 디자인 프로젝트', t:'Web', c:'디자인', ch:'Direct', model:'per_project', status:'active', price:2000000, cur:'KRW', q:[2,3,5,6], plan:[0,0,1,0,0,1,0,0,0,1,0,0],
+      costs:[['outsourcing','퍼블리싱 외주','amount','unit','monthly',300000],['payment','','percent','unit','monthly',3.3]] },
+    { name:'이미지 이펙트 구독', t:'Subscription', c:'구독', ch:'Website', model:'subscription', status:'ready', price:9900, cur:'KRW', q:[80,200,300,450], launch:d2(Math.min(12, curM + 1)),
+      costs:[['fixed','서버·API','amount','fixed','monthly',120000],['production','사용자당 API 비용','amount','unit','monthly',800],['payment','','percent','unit','monthly',3.3]] },
+    { name:'제너러티브 아트 엔진', t:'Creative Coding', c:'디지털 상품', ch:'Gumroad', model:'per_item', status:'active', price:29, cur:'USD', q:[40,120,200,300], launch:d2(2),
+      costs:[['platform','','percent','unit','monthly',10],['payment','','percent','unit','monthly',2.9],['advertising','','amount','fixed','monthly',30]] },
+    { name:'아크릴 스탠드 굿즈', t:'Physical Goods', c:'굿즈', ch:'스마트스토어', model:'per_item', status:'planning', price:18000, cur:'KRW', q:[50,120,200,300], launch:d2(11),
+      costs:[['production','','amount','unit','monthly',6500],['packaging','','amount','unit','monthly',800],['shipping','','amount','unit','monthly',3000],['platform','','percent','unit','monthly',5.5],['fixed','샘플 제작','amount','fixed','once',250000]] },
+  ];
+  const items = [], costs = [], plans = [], sales = [];
+  defs.forEach((x, k) => {
+    const id = uid();
+    items.push({ id, name:x.name, business_type_id:T(x.t), category_id:C(x.c), channel_id:H(x.ch), revenue_model:x.model, status:x.status, launch_date:x.launch || null, description:'샘플 데이터', notes:null, price:x.price, currency:x.cur, qty_min:x.q[0], qty_expected:x.q[1], qty_target:x.q[2], qty_max:x.q[3], updated_at: nowISO() });
+    x.costs.forEach(([t, l, mode, basis, rec, v]) => costs.push({ id: uid(), item_id:id, cost_type:t, label:l || null, mode, basis, recurrence:rec, value:v }));
+    if (x.plan) x.plan.forEach((q, i) => plans.push({ id: uid(), item_id:id, year:y, month:i + 1, quantity:q }));
+    if (x.status === 'active') for (let m = 1; m <= curM; m++) {
+      const [ly, lm] = (x.launch || `${y}-01`).split('-').map(Number); if (ly === y && m < lm) continue;
+      const base = x.plan ? x.plan[m - 1] : x.model === 'subscription' ? x.q[1] : x.q[1] / 12;
+      const q = Math.max(0, Math.round(base * (0.7 + ((m * 7 + k * 3) % 6) / 10)));
+      if (q) sales.push({ id: uid(), item_id:id, sale_date:d2(m, 10 + k), quantity:q, unit_price:x.price, amount: Math.round(q * x.price * 100) / 100, extra_cost:0, channel_id:H(x.ch), memo:'샘플' });
+    }
+  });
+  const r = await mutate('샘플 데이터 추가', async () => {
+    await S.store.insert('revenue_items', items); await S.store.insert('costs', costs);
+    if (plans.length) await S.store.insert('sales_plans', plans); if (sales.length) await S.store.insert('actual_sales', sales);
+    if (!num(S.settings.annual_target)) await S.store.upsert('settings', [{ id:1, annual_target:30000000 }], 'id');
+  }, '샘플 데이터를 추가했습니다');
+  if (r !== FAIL) await refresh(['revenue_items','costs','sales_plans','actual_sales','settings']);
+}
+function download(name, text, type) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function exportJson() {
+  const data = { exported_at: nowISO(), revenue_items:S.items, costs:S.costs, sales_plans:S.plans, actual_sales:S.sales.map(({ _y, _m, ...s }) => s), categories:S.categories, business_types:S.business_types, channels:S.channels, settings:S.settings };
+  download(`sales-planner-backup-${todayStr()}.json`, JSON.stringify(data, null, 2), 'application/json');
+}
+function exportCsv() {
+  const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const rows = [['판매일','항목','수량','단가','매출','통화','추가비용','채널','메모']].concat(S.sales.map(s => { const it = S.idx.item[s.item_id]; return [s.sale_date, it?.name, s.quantity, s.unit_price, s.amount, it?.currency, s.extra_cost, chName(s.channel_id || it?.channel_id), s.memo]; }));
+  download(`actual-sales-${todayStr()}.csv`, '\ufeff' + rows.map(r => r.map(q).join(',')).join('\n'), 'text/csv');
+}
+
+/* =====================================================================
+   19. 이벤트 (위임)
+   ===================================================================== */
+async function flushThen(fn) { if (Pending.size) await flushPlans(); fn(); }
+const go = page => { location.hash = '#/' + page; };
+const A = {
+  nav: el => go(el.dataset.v),
+  yr: el => flushThen(() => { S.ui.year += +el.dataset.v; render(); }),
+  mo: el => flushThen(() => { let m = S.ui.month + +el.dataset.v, y = S.ui.year; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } S.ui.month = m; S.ui.year = y; render(); }),
+  pickMonth: el => { S.ui.month = +el.dataset.v; render(); },
+  mix: el => { S.ui.mix = el.dataset.v; render(); },
+  newItem: () => openItem(),
+  editItem: (el, e) => { if (e.target.closest('.act')) return; openItem(el.dataset.id); },
+  dupItem: async el => { const nid = await duplicateItem(el.dataset.id); if (nid && S.idx.item[nid]) openItem(nid); },
+  delItem: el => deleteItem(el.dataset.id),
+  sortDir: () => { S.ui.dir *= -1; render(); },
+  clearF: () => { S.ui.f = { category:'', model:'', channel:'', status:'', year:'' }; S.ui.q = ''; render(); },
+  planView: el => { S.ui.planView = el.dataset.v; render(); },
+  fillPlan: el => fillPlan(el.dataset.id, 'fill'),
+  clearPlan: el => fillPlan(el.dataset.id, 'clear'),
+  pvaScope: el => { S.ui.pva.scope = el.dataset.v; render(); },
+  saleScope: el => { S.ui.sale.scope = el.dataset.v; render(); },
+  saveSaleInline: async () => { const root = $('#inlineSale'); if (await saveSale(root)) {} },
+  saveSaleModal: async el => { if (await saveSale($('#modal'), el.dataset.id || null)) Modal.close(); },
+  editSale: el => openSaleModal(el.dataset.id),
+  delSale: async el => {
+    const id = el.dataset.id; if (Modal.isOpen()) Modal.close();
+    if (!(await confirmDlg('실적 삭제', '이 실적 기록을 삭제합니다. 되돌릴 수 없습니다.', '삭제', true))) return;
+    const r = await mutate('실적 삭제', () => S.store.remove('actual_sales', id), '실적을 삭제했습니다'); if (r !== FAIL) await refresh(['actual_sales']);
+  },
+  anaGroup: el => { S.ui.ana.group = el.dataset.v; render(); },
+  anaBasis: el => { S.ui.ana.basis = el.dataset.v; render(); },
+  anaPeriod: el => { S.ui.ana.period = el.dataset.v; render(); },
+  scTab: el => { S.ui.sc.tab = el.dataset.v; render(); },
+  pickSc: el => { S.ui.sc.item = el.dataset.id; render(); },
+  simAdd: () => { const v = num($('#simNew').value); if (v <= 0) { toast('0보다 큰 가격을 입력하세요.', 'err'); return; } const it = scItem(); const ps = simPrices(it); if (!ps.includes(v)) ps.push(v); render(); },
+  simDel: el => { const it = scItem(), ps = simPrices(it); S.ui.sc.prices = ps.filter(p => p !== +el.dataset.v); if (!S.ui.sc.prices.length) S.ui.sc.prices = [num(it.price)]; render(); },
+  simReset: () => { S.ui.sc.prices = null; render(); },
+  goGoal: () => { S.ui.sc.tab = 'goal'; go('scenarios'); },
+  goSim: () => { S.ui.sc.item = D.draft.id; S.ui.sc.tab = 'price'; closeDrawer(true); go('scenarios'); },
+  saveGoal: async () => {
+    const a = num($('[data-in="goalA"]').value), m = $('[data-in="goalM"]').value.trim();
+    if (a < 0 || num(m) < 0) { toast('목표는 0 이상이어야 합니다.', 'err'); return; }
+    const r = await mutate('목표 저장', () => S.store.upsert('settings', [{ id:1, annual_target:a, monthly_target: m ? num(m) : null }], 'id'), '목표를 저장했습니다');
+    if (r !== FAIL) await refresh(['settings']);
+  },
+  saveFx: async () => {
+    const fx = { ...S.settings.fx_rates, KRW:1 }; let bad = false;
+    ['USD','EUR','JPY'].forEach(k => { const v = num($('#fx-' + k).value); if (v <= 0) bad = true; fx[k] = v; });
+    if (bad) { toast('환율은 0보다 커야 합니다.', 'err'); return; }
+    const r = await mutate('통화 설정 저장', () => S.store.upsert('settings', [{ id:1, base_currency: $('#baseCur').value, fx_rates: fx }], 'id'), '통화 설정을 저장했습니다');
+    if (r !== FAIL) await refresh(['settings']);
+  },
+  taxAdd: async el => {
+    const t = el.dataset.t, inp = $('#new-' + t), name = inp.value.trim(); if (!name) { inp.focus(); return; }
+    if (S[t].some(x => x.name === name)) { toast('같은 이름이 이미 있습니다.', 'err'); return; }
+    const r = await mutate('추가', () => S.store.insert(t, [{ id: uid(), name, sort_order: S[t].length, color: PALETTE[S[t].length % PALETTE.length] }]), `${TAX[t].ko}를 추가했습니다`);
+    if (r !== FAIL) await refresh([t]);
+  },
+  taxRen: async el => {
+    const t = el.dataset.t, x = S[t].find(v => v.id === el.dataset.id); const name = await promptDlg(`${TAX[t].ko} 이름 변경`, '새 이름', x.name);
+    if (!name || name === x.name) return;
+    const r = await mutate('이름 변경', () => S.store.update(t, x.id, { name }), '이름을 변경했습니다'); if (r !== FAIL) await refresh([t]);
+  },
+  taxDel: async el => {
+    const t = el.dataset.t, x = S[t].find(v => v.id === el.dataset.id);
+    const col = { business_types:'business_type_id', categories:'category_id', channels:'channel_id' }[t], n = S.items.filter(i => i[col] === x.id).length;
+    if (!(await confirmDlg(`${TAX[t].ko} 삭제`, `“${esc(x.name)}”을(를) 삭제합니다.${n ? ` 이 ${TAX[t].ko}를 쓰는 항목 ${n}개는 ‘미분류’가 됩니다.` : ''}`, '삭제', true))) return;
+    const r = await mutate('삭제', () => S.store.remove(t, x.id), '삭제했습니다'); if (r !== FAIL) await refresh([t, 'revenue_items', 'actual_sales']);
+  },
+  openConn: () => openConnModal(false),
+  saveConn: () => saveConn(),
+  startDemo: async () => { localStorage.setItem('spp.demo', '1'); Conn.clear(); if (Modal.isOpen()) Modal.close(); S.store = new DemoStore(); await loadAll(); },
+  disconnect: async () => { if (!(await confirmDlg('연결 해제', '이 기기에 저장된 Supabase 연결 정보를 지웁니다. Supabase의 데이터는 그대로 남습니다.', '연결 해제', true))) return; Conn.clear(); S.store = null; render(); openConnModal(true); },
+  retry: () => S.store ? loadAll() : openConnModal(true),
+  exportJson: () => exportJson(), exportCsv: () => exportCsv(), seedSample: () => seedSample(),
+  more: () => Modal.open(`<div class="mh"><h2>메뉴</h2></div><div class="mb"><div class="stack" style="gap:8px">${PAGES.map(p => `<a class="btn ${S.ui.page === p.id ? 'pri' : ''}" style="justify-content:flex-start;height:48px" href="#/${p.id}" data-a="mClose">${icon(p.icon)}${p.ko}<span class="faint" style="font-weight:400;margin-left:auto">${p.sub}</span></a>`).join('')}</div></div><div class="mf"><button class="btn" data-a="mClose">닫기</button></div>`),
+  fab: () => {
+    const p = S.ui.page;
+    if (p === 'items' || p === 'overview' && !S.items.length) return openItem();
+    if (p === 'plan' || p === 'scenarios' || p === 'settings' || p === 'analytics') return openItem();
+    openSaleModal(null);
+  },
+  // modal / drawer
+  mClose: el => Modal.close(el.dataset.v === '1' ? true : el.dataset.v === '0' ? false : el.dataset.v === '' ? null : undefined),
+  mPrompt: () => Modal.close($('#pv').value.trim() || null),
+  closeTop: () => { if (Modal.isOpen()) Modal.close(null); else if (D.draft) closeDrawer(); },
+  closeDrawer: () => closeDrawer(),
+  dTab: el => { D.tab = el.dataset.v; renderDrawer(); },
+  costAdd: el => { const t = COST[el.dataset.v]; D.draft.costs.push({ id: uid(), cost_type: t.id, label:'', mode: t.mode, basis: t.basis || 'unit', recurrence: t.rec || 'monthly', value: 0 }); D.dirty = true; renderDrawer(); const rows = $$('#dbody .crow'); rows.at(-1)?.querySelector('[data-k="value"]')?.focus(); },
+  costDel: el => { D.draft.costs.splice(+el.dataset.v, 1); D.dirty = true; renderDrawer(); },
+  saveItem: async el => { el.disabled = true; const ok = await saveItem(D.draft); el.disabled = false; if (ok) closeDrawer(true); },
+  delItemD: async () => { if (await deleteItem(D.draft.id)) closeDrawer(true); },
+  dupItemD: async () => { if (D.dirty && !(await confirmDlg('복제', '저장하지 않은 변경 사항은 복제본에 포함되지 않습니다.', '계속'))) return; const nid = await duplicateItem(D.draft.id); if (nid && S.idx.item[nid]) openItem(nid); },
+  saleFromItem: () => { const id = D.draft.id; closeDrawer(true).then(() => openSaleModal(null, { item_id: id })); },
+};
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-a]'); if (!el) return;
+  const fn = A[el.dataset.a]; if (!fn) return;
+  if (el.tagName !== 'A') e.preventDefault();
+  fn(el, e);
+});
+function applySaleItem(root, itemId) {
+  const it = S.idx.item[itemId]; if (!it || !root) return;
+  root.querySelector('[name="unit_price"]').value = num(it.price);
+  root.querySelector('[data-unit]').textContent = modelOf(it.revenue_model).unit;
+  root.querySelector('[data-cur]').textContent = it.currency;
+  const ch = root.querySelector('[name="channel_id"]'); if (ch && !ch.value) ch.value = it.channel_id || '';
+  recalcSale(root);
+}
+function recalcSale(root) { const q = num(root.querySelector('[name="quantity"]').value), p = num(root.querySelector('[name="unit_price"]').value); root.querySelector('[name="amount"]').value = Math.round(q * p * 100) / 100; }
+let qT;
+function onInput(e) {
+  const el = e.target;
+  if (el.closest('#drawer')) {
+    if (el.dataset.in === 'dTax') return;
+    const onChange = el.tagName === 'SELECT' || el.type === 'date';
+    if ((e.type === 'change') !== onChange) return;
+    return drawerInput(el);
+  }
+  const k = el.dataset.in; if (!k) return;
+  const isInput = e.type === 'input';
+  switch (k) {
+    case 'month': if (!isInput) { S.ui.month = +el.value; render(); } break;
+    case 'q': if (isInput) { clearTimeout(qT); qT = setTimeout(() => { S.ui.q = el.value; render(); const n = $('[data-in="q"]'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 250); } break;
+    case 'filter': if (!isInput) { S.ui.f[el.dataset.k] = el.value; render(); } break;
+    case 'sort': if (!isInput) { S.ui.sort = el.value; render(); } break;
+    case 'plan': if (isInput) {
+      const v = el.value.trim(); if (v !== '' && !/^\d*\.?\d*$/.test(v)) { el.value = v.replace(/[^\d.]/g, ''); return; }
+      const id = el.dataset.id, m = +el.dataset.m;
+      $$(`input[data-in="plan"][data-id="${id}"][data-m="${m}"]`).forEach(o => { if (o !== el) o.value = el.value; });
+      queuePlan(id, S.ui.year, m, num(v)); updatePlanTotals(id);
+    } break;
+    case 'pvaItem': if (!isInput) { S.ui.pva.item = el.value; render(); } break;
+    case 'saleItemF': if (!isInput) { S.ui.sale.item = el.value; render(); } break;
+    case 'saleQ': if (isInput) { clearTimeout(qT); qT = setTimeout(() => { S.ui.sale.q = el.value; render(); const n = $('[data-in="saleQ"]'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }, 300); } break;
+    case 'saleItem': if (!isInput) applySaleItem(el.closest('.fgrid'), el.value); break;
+    case 'saleCalc': if (isInput) recalcSale(el.closest('.fgrid')); break;
+    case 'scItem': if (!isInput) { S.ui.sc.item = el.value; render(); } break;
+    case 'simBasis': if (!isInput) { S.ui.sc.basisQty = el.value; render(); } break;
+    case 'simE': if (!isInput) { S.ui.sc.elasticity = num(el.value); render(); } break;
+    case 'taxColor': if (!isInput) { const t = el.dataset.t; mutate('색상 변경', () => S.store.update(t, el.dataset.id, { color: el.value })).then(r => r !== FAIL && refresh([t])); } break;
+  }
+}
+document.addEventListener('input', onInput);
+document.addEventListener('change', async e => {
+  const el = e.target;
+  if (el.dataset.in === 'dTax') {       // 드로어 분류 선택 (+ 새로 추가)
+    const t = el.dataset.t;
+    if (el.value === '__new') {
+      el.value = D.draft[el.name] || '';
+      const name = await promptDlg(`새 ${TAX[t].ko}`, '이름');
+      if (!name) return;
+      const row = { id: uid(), name, sort_order: S[t].length, color: PALETTE[S[t].length % PALETTE.length] };
+      const r = await mutate('추가', () => S.store.insert(t, [row]), `${TAX[t].ko}를 추가했습니다`);
+      if (r === FAIL) return;
+      S[t] = await S.store.list(t); rebuild(); D.draft[el.name] = row.id; D.dirty = true; renderDrawer();
+      return;
+    }
+    D.draft[el.name] = el.value; D.dirty = true; return;
+  }
+  onInput(e);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { if (Modal.isOpen()) Modal.close(null); else if (D.draft) closeDrawer(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 's' && D.draft) { e.preventDefault(); $('#drawer [data-a="saveItem"]')?.click(); }
+});
+function route() {
+  const p = (location.hash.match(/^#\/(\w+)/) || [])[1];
+  const page = PAGES.some(x => x.id === p) ? p : 'overview';
+  flushThen(() => { S.ui.page = page; if (Modal.isOpen()) Modal.close(null); render(); window.scrollTo(0, 0); });
+}
+window.addEventListener('hashchange', route);
+let rT, lastW = innerWidth;
+window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (Math.abs(innerWidth - lastW) < 40) return; lastW = innerWidth; if (!document.activeElement?.matches('input,textarea,select')) render(); }, 200); });
+window.addEventListener('beforeunload', e => { if (Pending.size) { flushPlans(); e.preventDefault(); e.returnValue = ''; } });
+
+/* =====================================================================
+   20. 부팅 / PWA
+   ===================================================================== */
+async function boot() {
+  const c = Conn.get();
+  S.store = c ? new RemoteStore(c.url, c.key) : Conn.demo() ? new DemoStore() : null;
+  const p = (location.hash.match(/^#\/(\w+)/) || [])[1]; if (PAGES.some(x => x.id === p)) S.ui.page = p;
+  render();
+  if (!S.store) { openConnModal(true); return; }
+  await loadAll();
+}
+if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+boot();
+</script>
+</body>
+</html>

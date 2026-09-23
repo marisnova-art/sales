@@ -1,0 +1,12 @@
+{
+  "name": "매출 플래너",
+  "short_name": "매출 플래너",
+  "description": "개인 사업 매출 계획·수익 관리",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#E3E1DC",
+  "theme_color": "#E3E1DC",
+  "lang": "ko",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}
