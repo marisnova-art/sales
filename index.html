@@ -4,11 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>매출 플래너</title>
+<meta name="description" content="수익 항목·월별 계획·실적·시나리오를 한곳에서 관리하는 개인용 매출 플래너">
 <meta name="theme-color" content="#E3E1DC">
+<meta name="color-scheme" content="light">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="매출 플래너">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="매출 플래너">
+<meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <script>window.SPP_CONFIG = window.SPP_CONFIG || {};</script>
 <script src="config.js"></script>
@@ -341,6 +349,36 @@ svg.i{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-widt
   .toasts{bottom:calc(90px + var(--safe-b))}
 }
 @media (max-width:420px){.fgrid{grid-template-columns:1fr}.kstrip .k b{font-size:16px}}
+
+/* ---------- PWA ---------- */
+.conn.inst{background:var(--ink);color:#F4F1EB;border-color:var(--ink);font-weight:550}
+.conn.inst svg.i{width:15px;height:15px}
+.conn.inst[hidden],.mtop .inst[hidden]{display:none}
+.mtop .inst{margin-left:auto;width:36px;height:36px;border-radius:999px;border:0;background:var(--ink);color:#F4F1EB;display:grid;place-items:center;cursor:pointer}
+.mtop .inst:not([hidden]) + .conn{margin-left:0}
+.pwabar{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translate(-50%,calc(-100% - 60px));visibility:hidden;z-index:90;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 16px;border-radius:999px;background:var(--panel);border:1px solid var(--line2);box-shadow:0 18px 40px -18px rgba(40,36,30,.45);font-size:12.5px;max-width:calc(100vw - 32px);transition:transform .35s cubic-bezier(.2,.8,.2,1),visibility 0s .35s}
+.pwabar.on{transform:translate(-50%,0);visibility:visible;transition-delay:0s}
+.pwabar .dot{width:8px;height:8px}
+.pwabar .btn{height:30px;padding:0 12px;font-size:12px}
+.pwabar.off{background:var(--ochre-s);border-color:rgba(185,154,94,.4);color:#5e4b24;padding-right:16px}
+.pwabar span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ios-steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.ios-steps li{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:16px;background:var(--well);border:1px solid var(--line)}
+.ios-steps b{width:24px;height:24px;flex:none;border-radius:50%;background:var(--ink);color:#F4F1EB;display:grid;place-items:center;font-size:11.5px}
+.pwa-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 14px}
+.pwa-meta div{padding:12px 14px;border-radius:16px;background:var(--well);border:1px solid var(--line)}
+.pwa-meta small{display:block;color:var(--ink3);font-size:11px}
+.pwa-meta b{font-weight:600;font-size:13px}
+@media (max-width:860px){.pwa-meta{grid-template-columns:1fr}}
+/* 설치된 앱(standalone)으로 실행될 때 — 상단 안전 영역 확보 */
+@media (display-mode:standalone){
+  .main{padding-top:calc(20px + env(safe-area-inset-top,0px))}
+  .side{padding-top:calc(24px + env(safe-area-inset-top,0px))}
+  body{overscroll-behavior-y:none}
+}
+@media (display-mode:standalone) and (max-width:860px){
+  .main{padding-top:calc(10px + env(safe-area-inset-top,0px))}
+}
 </style>
 </head>
 <body>
@@ -350,11 +388,12 @@ svg.i{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-widt
     <nav class="nav" id="nav"></nav>
     <div class="side-foot">
       <div class="saving" id="saving"></div>
+      <button class="conn inst" data-a="pwaInstall" id="instBox" hidden><svg class="i"><use href="#i-download"/></svg><span>앱으로 설치</span></button>
       <button class="conn" data-a="openConn" id="connBox"><i class="dot"></i><span>연결 확인 중</span></button>
     </div>
   </aside>
   <main class="main">
-    <div class="mtop"><div class="brand"><div class="brand-mark"><span></span></div><b>매출 플래너</b></div><button class="conn" data-a="openConn" id="connBoxM"><i class="dot"></i><span></span></button></div>
+    <div class="mtop"><div class="brand"><div class="brand-mark"><span></span></div><b>매출 플래너</b></div><button class="inst" data-a="pwaInstall" id="instBoxM" aria-label="앱으로 설치" hidden><svg class="i"><use href="#i-download"/></svg></button><button class="conn" data-a="openConn" id="connBoxM"><i class="dot"></i><span></span></button></div>
     <header class="top" id="top"></header>
     <div id="banner"></div>
     <section id="view" aria-live="polite"></section>
@@ -366,6 +405,7 @@ svg.i{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-widt
 <aside class="drawer" id="drawer" aria-label="수익 항목 편집" role="dialog"></aside>
 <div class="modal" id="modal" role="dialog" aria-modal="true"></div>
 <div class="toasts" id="toasts"></div>
+<div class="pwabar" id="pwabar" role="status" aria-live="polite"></div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-overview" viewBox="0 0 24 24"><path d="M4 13a8 8 0 0 1 16 0"/><path d="M12 13l4-4"/><circle cx="12" cy="13" r="1.3"/><path d="M4 18h16"/></symbol>
@@ -384,6 +424,9 @@ svg.i{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-widt
   <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
   <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19.5h14"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 3.5v11M8 7.5l4-4 4 4"/><path d="M8 11H6.5A1.5 1.5 0 0 0 5 12.5v6A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 17.5 11H16"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M19.5 4.5v3.8h-3.8"/></symbol>
 </svg>
 <script>
 'use strict';
@@ -812,6 +855,7 @@ function setSaving(state, err) {
 }
 async function mutate(label, fn, success) {
   if (!S.store) { toast('저장소가 연결되지 않았습니다. 설정에서 Supabase를 연결하세요.', 'err'); return FAIL; }
+  if (S.store.mode === 'supabase' && !navigator.onLine) { setSaving('err', true); toast('오프라인 상태에서는 저장할 수 없습니다. 인터넷에 다시 연결된 뒤 시도하세요.', 'err', 5000); return FAIL; }
   setSaving('on');
   try { const r = await fn(); setSaving('done'); if (success) toast(success); return r; }
   catch (e) { setSaving('err', true); toast(`${label} 실패 — ${e.message}`, 'err', 7000); return FAIL; }
@@ -1592,6 +1636,7 @@ function vSettings() {
       <p class="note" style="margin-top:12px">${S.items.length}개 항목 · 비용 ${S.costs.length} · 월별 계획 ${S.plans.length} · 실적 ${S.sales.length}건</p></section>
     <section class="panel s6"><div class="phead"><h3>데이터 관리</h3><p>백업은 JSON 파일로 저장됩니다.</p></div>
       <div class="row"><button class="btn" data-a="exportJson">JSON 백업 내려받기</button><button class="btn" data-a="exportCsv">실적 CSV 내려받기</button><button class="btn soft" data-a="seedSample">샘플 데이터 추가</button></div></section>
+    ${pwaPanel()}
   </div>`;
 }
 </script>
@@ -1971,12 +2016,145 @@ async function boot() {
   const c = Conn.get();
   S.store = c ? new RemoteStore(c.url, c.key) : Conn.demo() ? new DemoStore() : null;
   const p = (location.hash.match(/^#\/(\w+)/) || [])[1]; if (PAGES.some(x => x.id === p)) S.ui.page = p;
+  if (S.store) S.loading = true;   // 데이터 로드 전 화면이 settings(null)를 읽지 않도록
   render();
   if (!S.store) { openConnModal(true); return; }
   await loadAll();
+  PWA.shortcut();
 }
-if ('serviceWorker' in navigator && /^https?:/.test(location.protocol)) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
-boot();
+
+/* ---------- PWA: 설치 · 업데이트 · 오프라인 ---------- */
+const PWA = {
+  deferred: null, reg: null, waiting: null, version: '', reloading: false,
+  standalone: () => matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: window-controls-overlay)').matches || navigator.standalone === true,
+  ios: () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1),
+  canInstall() { return !this.standalone() && (!!this.deferred || this.ios()); },
+  status() {
+    if (!('serviceWorker' in navigator)) return '이 브라우저는 앱 설치를 지원하지 않습니다';
+    if (!/^https:|^http:\/\/(localhost|127\.0\.0\.1)/.test(location.href)) return 'HTTPS 주소로 열어야 설치할 수 있습니다';
+    if (this.standalone()) return '앱으로 실행 중';
+    if (this.deferred) return '설치할 수 있습니다';
+    if (this.ios()) return 'Safari 공유 메뉴에서 설치';
+    return '브라우저 메뉴에서 설치';
+  },
+  syncButtons() {
+    const show = this.canInstall();
+    ['#instBox', '#instBoxM'].forEach(s => { const b = $(s); if (b) b.hidden = !show; });
+  },
+  bar(html, cls = '', ms = 0) {
+    const b = $('#pwabar'); if (!b) return;
+    clearTimeout(this._bt);
+    if (!html) { b.classList.remove('on'); return; }
+    b.className = 'pwabar ' + cls; b.innerHTML = html;
+    requestAnimationFrame(() => b.classList.add('on'));
+    if (ms) this._bt = setTimeout(() => b.classList.remove('on'), ms);
+  },
+  async install() {
+    if (this.deferred) {
+      this.deferred.prompt();
+      const { outcome } = await this.deferred.userChoice.catch(() => ({}));
+      this.deferred = null; this.syncButtons();
+      if (outcome === 'accepted') toast('매출 플래너를 설치하고 있습니다');
+      if (S.ui.page === 'settings') render();
+      return;
+    }
+    if (this.ios()) {
+      Modal.open(`<div class="mh"><h2>홈 화면에 추가</h2></div>
+        <div class="mb"><p class="muted" style="margin:0 0 14px;line-height:1.6">iPhone·iPad에서는 Safari에서 직접 추가합니다. 추가하면 주소창 없이 앱처럼 열립니다.</p>
+        <ol class="ios-steps"><li><b>1</b><span>Safari 하단(iPad는 상단)의 공유 버튼 ${icon('share')} 을 누릅니다</span></li>
+        <li><b>2</b><span>목록을 내려 <strong>홈 화면에 추가</strong>를 선택합니다</span></li>
+        <li><b>3</b><span>오른쪽 위 <strong>추가</strong>를 누르면 홈 화면에 아이콘이 생깁니다</span></li></ol></div>
+        <div class="mf"><button class="btn pri" data-a="mClose">확인</button></div>`);
+      return;
+    }
+    Modal.open(`<div class="mh"><h2>앱으로 설치</h2></div>
+      <div class="mb"><p class="muted" style="margin:0;line-height:1.7">Chrome·Edge 주소창 오른쪽의 설치 아이콘 ${icon('download')} 을 누르거나, 브라우저 메뉴(⋮)에서 <strong>앱 설치</strong> 또는 <strong>홈 화면에 추가</strong>를 선택하세요.<br><span class="faint">설치 버튼이 보이지 않으면 이미 설치되어 있거나, HTTPS가 아닌 주소로 열었을 수 있습니다.</span></p></div>
+      <div class="mf"><button class="btn pri" data-a="mClose">확인</button></div>`);
+  },
+  showUpdate(w) {
+    this.waiting = w;
+    this.bar(`<i class="dot ok"></i><span>새 버전이 준비되었습니다</span><button class="btn sm" data-a="pwaLater">나중에</button><button class="btn pri sm" data-a="pwaUpdate">${icon('refresh')}업데이트</button>`);
+  },
+  applyUpdate() {
+    if (!this.waiting) return location.reload();
+    const go = () => this.waiting.postMessage({ type: 'SKIP_WAITING' });
+    this.bar(`<span>업데이트 적용 중…</span>`);
+    typeof Pending !== 'undefined' && Pending.size ? flushThen(go) : go();
+  },
+  async checkUpdate(manual) {
+    if (!this.reg) { manual && toast('서비스 워커가 아직 등록되지 않았습니다', 'err'); return; }
+    try { await this.reg.update(); } catch { manual && toast('업데이트를 확인하지 못했습니다', 'err'); return; }
+    if (this.reg.waiting) this.showUpdate(this.reg.waiting);
+    else if (this.reg.installing) manual && toast('새 버전을 내려받는 중입니다…');
+    else if (manual) toast('최신 버전을 사용 중입니다');
+  },
+  net() {
+    if (S.ui.page === 'settings' && !Modal.isOpen() && !D.draft) render();
+    if (navigator.onLine) {
+      if (this._wasOff) {
+        this.bar(`<i class="dot ok"></i><span>다시 온라인입니다 — 최신 데이터를 불러옵니다</span>`, '', 2600);
+        if (S.store?.mode === 'supabase') loadAll();
+      }
+      this._wasOff = false;
+    } else {
+      this._wasOff = true;
+      this.bar(`<i class="dot demo"></i><span>오프라인 — ${S.store?.mode === 'supabase' ? '마지막으로 불러온 데이터를 보기 전용으로 표시합니다' : '이 기기 데이터로 계속 작업할 수 있습니다'}</span>`, 'off');
+    }
+  },
+  shortcut() {   // 앱 바로가기: #/actual?new=1 → 실적 입력 창 열기
+    if (!/[?&]new=1/.test(location.hash)) return;
+    history.replaceState(null, '', location.pathname + location.search + location.hash.replace(/[?&]new=1/, ''));
+    if (S.items.length) openSaleModal(null);
+  },
+  async register() {
+    if (!('serviceWorker' in navigator) || !/^https?:/.test(location.protocol)) return;
+    try { this.reg = await navigator.serviceWorker.register('sw.js', { scope: './', updateViaCache: 'none' }); }
+    catch (e) { console.warn('[PWA] 서비스 워커 등록 실패', e); return; }
+    const reg = this.reg;
+    if (reg.waiting && navigator.serviceWorker.controller) this.showUpdate(reg.waiting);
+    reg.addEventListener('updatefound', () => {
+      const nw = reg.installing; if (!nw) return;
+      nw.addEventListener('statechange', () => {
+        if (nw.state !== 'installed') return;
+        if (navigator.serviceWorker.controller) this.showUpdate(nw);   // 업데이트
+        else nw.postMessage({ type: 'SKIP_WAITING' });   // 첫 설치: 바로 오프라인 준비 완료
+      });
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (this.reloading || !this._updating) return; this.reloading = true; location.reload();
+    });
+    navigator.serviceWorker.addEventListener('message', e => { if (e.data?.type === 'VERSION') { this.version = e.data.version; if (S.ui.page === 'settings') render(); } });
+    navigator.serviceWorker.ready.then(r => r.active?.postMessage({ type: 'GET_VERSION' }));
+    // 앱으로 돌아올 때 / 1시간마다 새 버전 확인
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') this.checkUpdate(false); });
+    setInterval(() => this.checkUpdate(false), 60 * 60 * 1000);
+  },
+};
+function pwaPanel() {
+  const inst = PWA.standalone();
+  return `<section class="panel s12"><div class="phead"><h3>앱 설치</h3><p>홈 화면·작업 표시줄에 설치하면 주소창 없이 앱처럼 열리고, 인터넷이 끊겨도 마지막 데이터를 볼 수 있습니다.</p></div>
+    <div class="pwa-meta">
+      <div><small>상태</small><b>${esc(PWA.status())}</b></div>
+      <div><small>앱 버전</small><b>${PWA.version ? 'v' + esc(PWA.version) : '—'}</b></div>
+      <div><small>네트워크</small><b>${navigator.onLine ? '온라인' : '오프라인'}</b></div>
+    </div>
+    <div class="row">${inst ? '' : `<button class="btn pri" data-a="pwaInstall">${icon('download')}앱으로 설치</button>`}<button class="btn" data-a="pwaCheck">${icon('refresh')}업데이트 확인</button></div>
+    <p class="note" style="margin-top:12px">오프라인에서는 Supabase 데이터를 볼 수만 있고, 저장은 다시 연결된 뒤에 할 수 있습니다. 데모 모드 데이터는 오프라인에서도 그대로 저장됩니다.</p></section>`;
+}
+Object.assign(A, {
+  pwaInstall: () => { if (Modal.isOpen()) Modal.close(null); PWA.install(); },
+  pwaUpdate: () => { PWA._updating = true; PWA.applyUpdate(); },
+  pwaLater: () => PWA.bar(''),
+  pwaCheck: () => PWA.checkUpdate(true),
+});
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); PWA.deferred = e; PWA.syncButtons(); if (S.ui.page === 'settings') render(); });
+window.addEventListener('appinstalled', () => { PWA.deferred = null; PWA.syncButtons(); toast('매출 플래너가 설치되었습니다'); });
+window.addEventListener('online', () => PWA.net());
+window.addEventListener('offline', () => PWA.net());
+matchMedia('(display-mode: standalone)').addEventListener?.('change', () => PWA.syncButtons());
+window.addEventListener('load', () => PWA.register());
+PWA.syncButtons();
+boot().then(() => { if (!navigator.onLine) PWA.net(); });
 </script>
 </body>
 </html>
